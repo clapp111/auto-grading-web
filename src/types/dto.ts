@@ -75,6 +75,8 @@ export interface ExamResponse {
   student_count: number
   created_at: string
   updated_at: string | null
+  problem_sheet_url: string | null
+  model_answer_url: string | null
 }
 
 // ── 문제 ──────────────────────────────────────────────────────────────
