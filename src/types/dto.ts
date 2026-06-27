@@ -52,6 +52,7 @@ export interface PresignedUrlResponse {
 export interface MemberResponse {
   member_id: number
   email: string
+  name: string
   affiliation: string | null
   affiliation_role: AffiliationRole
   role: Role

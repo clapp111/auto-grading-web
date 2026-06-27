@@ -6,6 +6,7 @@ import { lazy, Suspense, type ReactNode } from 'react'
 
 const LandingPage    = lazy(() => import('@/pages/home/LandingPage'))
 const DashboardPage  = lazy(() => import('@/pages/dashboard/DashboardPage'))
+const AccountPage    = lazy(() => import('@/pages/account/AccountPage'))
 const Step1Page      = lazy(() => import('@/pages/exam/step1/Step1Page'))
 const Step2Page      = lazy(() => import('@/pages/exam/step2/Step2Page'))
 const Step3Page      = lazy(() => import('@/pages/exam/step3/Step3Page'))
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
   {
     path: '/dashboard',
     element: <PrivateRoute><Wrap><DashboardPage /></Wrap></PrivateRoute>,
+  },
+  {
+    path: '/account',
+    element: <PrivateRoute><Wrap><AccountPage /></Wrap></PrivateRoute>,
   },
   {
     path: '/exam/:examId/step/1',
