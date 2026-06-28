@@ -2,11 +2,11 @@ import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { ChevronDown, Upload } from 'lucide-react'
 import { toast } from 'sonner'
-import { PdfCanvas, type RegionOverlay } from './PdfCanvas'
+import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
 import { useProblems } from '../hooks/useProblems'
 import { useModelAnswerOcr } from '../hooks/useModelAnswerOcr'
 import { TYPE_COLORS, TYPE_LABELS_KO, OCR_REQUIRED_TYPES } from '../constants'
-import type { Region } from '@/types/dto'
+
 import type { ProgrammingLanguage } from '@/types/enums'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +27,7 @@ interface SubStep2Props {
 
 export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubStep2Props) {
   const [currentPage, setCurrentPage] = useState(1)
-  const [drawMode, setDrawMode] = useState<'rect' | 'lasso'>('rect')
+  const drawMode = 'rect' as const
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<ProgrammingLanguage>('CPP')
@@ -94,7 +94,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
   const activeProblem = ocrProblems.find(p => p.problem_id === activeProblemId) ?? null
   const isCoding = activeProblem?.type === 'CODING'
 
-  const handleDrawComplete = (region: Region) => {
+  const handleDrawComplete = (selection: DrawSelection) => {
     if (!activeProblemId) {
       toast.error('매핑할 문제를 먼저 선택하세요.')
       return
@@ -105,7 +105,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
     }
     runOcr({
       problemId: activeProblemId,
-      body: { region, ...(isCoding ? { language: selectedLanguage } : {}) },
+      body: { region: selection.bbox_region, ...(isCoding ? { language: selectedLanguage } : {}) },
     })
   }
 
@@ -150,35 +150,14 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
           <div className="flex items-center gap-2 mb-[14px]">
             <button
               type="button"
-              onClick={() => setDrawMode('rect')}
-              className={cn(
-                'flex items-center gap-[6px] h-[34px] px-[13px] border rounded-[9px] text-[13px] font-semibold whitespace-nowrap transition-colors',
-                drawMode === 'rect'
-                  ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
-                  : 'border-[#e2e4e9] bg-white text-[#5f636b]',
-              )}
+              className="flex items-center gap-[6px] h-[34px] px-[13px] border border-accent bg-accent rounded-[9px] text-white text-[13px] font-semibold shadow-[0_2px_6px_rgba(79,70,229,.4)] whitespace-nowrap"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                 <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
               </svg>
               사각형
             </button>
-            <button
-              type="button"
-              onClick={() => setDrawMode('lasso')}
-              className={cn(
-                'flex items-center gap-[6px] h-[34px] px-[13px] border rounded-[9px] text-[13px] font-semibold whitespace-nowrap transition-colors',
-                drawMode === 'lasso'
-                  ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
-                  : 'border-[#e2e4e9] bg-white text-[#5f636b]',
-              )}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <path d="M4 12c0-5 4-7 8-7s8 2 8 6-3 7-8 7c-3 0-3 3-5 3s-3-2-3-4 2-3 3-5z" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-              올가미
-            </button>
-
+            
             {/* 매핑할 문제 선택 + 언어 선택 */}
             <div className="ml-auto flex items-center gap-[8px]">
               {/* 언어 선택 — CODING 문제 선택 시에만 표시 */}
@@ -234,7 +213,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
               url={modelAnswerUrl}
               pageWidth={400}
               regions={regionOverlays}
-              drawMode={drawMode}
+              drawMode="rect"
               currentPage={currentPage}
               onPageChange={setCurrentPage}
               onDrawComplete={handleDrawComplete}

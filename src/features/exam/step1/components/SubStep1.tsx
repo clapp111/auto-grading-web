@@ -2,10 +2,10 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Trash2, GripVertical, ChevronDown, Upload } from 'lucide-react'
 import { toast } from 'sonner'
-import { PdfCanvas, type RegionOverlay } from './PdfCanvas'
+import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
 import { useProblems } from '../hooks/useProblems'
 import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO, PROBLEM_TYPES } from '../constants'
-import type { ProblemResponse, Region } from '@/types/dto'
+import type { ProblemResponse } from '@/types/dto'
 import type { ProblemType } from '@/types/enums'
 import { cn } from '@/lib/utils'
 
@@ -198,10 +198,10 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
     disabled: sheetUploading,
   })
 
-  const handleDrawComplete = async (region: Region) => {
+  const handleDrawComplete = async (selection: DrawSelection) => {
     const nextLabel = `Q${problems.length + 1}`
     try {
-      await create({ label: nextLabel, type: 'MULTIPLE_CHOICE', max_score: 5, region })
+      await create({ label: nextLabel, type: 'MULTIPLE_CHOICE', max_score: 5, region: selection.bbox_region })
     } catch {
       // error toast handled in hook
     }
