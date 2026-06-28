@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { PdfCanvas } from '@/components/exam/PdfCanvas'
 import { useStep5 } from '@/hooks/exam/useStep5'
+import { examsApi } from '@/api/exams'
 import { TYPE_COLORS } from '@/types/constants'
 import type { OcrResultResponse } from '@/types/dto'
 import { cn } from '@/lib/utils'
@@ -274,6 +276,12 @@ export default function Step5Page() {
   const examId = Number(examIdStr)
   const navigate = useNavigate()
 
+  const { data: examRes } = useQuery({
+    queryKey: ['exam', examId],
+    queryFn: () => examsApi.get(examId),
+    enabled: !!examId,
+  })
+
   const {
     isOcrLoading,
     view,
@@ -309,7 +317,7 @@ export default function Step5Page() {
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} currentStep={5} />
+        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={5} />
       </aside>
 
       {/* ── 메인 리스트 뷰 ──────────────────────────────────────────────── */}
@@ -318,10 +326,10 @@ export default function Step5Page() {
           {/* Header */}
           <div className="px-[30px] py-[24px] pb-[20px] border-b border-[#f0f1f4] flex-none">
             <h2 className="text-[22px] font-extrabold text-[#15171d] tracking-[-0.02em]">
-              답안 인식 현황
+              답안 검토 현황
             </h2>
             <p className="text-[14px] text-[#71757e] mt-[5px]">
-              학생 이름을 눌러 문제 순서대로 답안 인식을 확인·확정하세요
+              학생 이름을 눌러 문제 순서대로 OCR의 답안 인식을 검토 및 확정하세요
             </p>
             {/* 전체 확정 진행바 */}
             <div className="flex items-center gap-[12px] mt-[16px]">
@@ -344,7 +352,7 @@ export default function Step5Page() {
             <div className="flex items-center text-[12.5px] text-[#8a8f99] font-bold px-[16px] pb-[10px]">
               <div className="w-[32px] flex-none" />
               <div className="flex-1 pl-[14px]">학생</div>
-              <div className="w-[340px]">답안 인식 진행</div>
+              <div className="w-[340px]">답안 검토 진행</div>
               <div className="w-[24px]" />
             </div>
 
