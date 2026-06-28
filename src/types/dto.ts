@@ -88,6 +88,7 @@ export interface ProblemResponse {
   max_score: number
   region: Region | null
   language: ProgrammingLanguage | null
+  problem_text: string | null
 }
 
 export interface ModelAnswerResponse {
