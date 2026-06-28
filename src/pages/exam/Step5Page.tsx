@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { PdfCanvas } from '@/features/exam/step1/components/PdfCanvas'
-import { useStep5 } from '@/features/exam/step5/hooks/useStep5'
-import { TYPE_COLORS } from '@/features/exam/step1/constants'
+import { PdfCanvas } from '@/components/exam/PdfCanvas'
+import { useStep5 } from '@/hooks/exam/useStep5'
+import { TYPE_COLORS } from '@/types/constants'
 import type { OcrResultResponse } from '@/types/dto'
 import { cn } from '@/lib/utils'
 

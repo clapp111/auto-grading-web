@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { usePresignedUpload } from '@/hooks/usePresignedUpload'
-import { useJobPolling } from '@/hooks/useJobPolling'
+import { usePresignedUpload } from '@/hooks/common/usePresignedUpload'
+import { useJobPolling } from '@/hooks/common/useJobPolling'
 import { problemsApi, type ModelAnswerOcrRequest, type ModelAnswerUpdateRequest } from '@/api/problems'
 
 export function useModelAnswerOcr(examId: number, initialModelAnswerUrl?: string | null) {

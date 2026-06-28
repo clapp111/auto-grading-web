@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Sparkles, AlignLeft, ClipboardCheck, UserCheck, ChevronRight } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/api/auth'
-import LoginModal from '@/features/auth/components/LoginModal'
-import SignupModal from '@/features/auth/components/SignupModal'
+import LoginModal from '@/components/auth/LoginModal'
+import SignupModal from '@/components/auth/SignupModal'
 
 const FEATURES = [
   {

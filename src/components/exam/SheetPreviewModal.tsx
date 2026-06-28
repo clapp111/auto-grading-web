@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { PdfCanvas } from '@/features/exam/step1/components/PdfCanvas'
+import { PdfCanvas } from '@/components/exam/PdfCanvas'
 import { sheetsApi } from '@/api/sheets'
 import type { AnswerSheetResponse } from '@/types/dto'
 

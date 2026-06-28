@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { usePresignedUpload } from '@/hooks/usePresignedUpload'
+import { usePresignedUpload } from '@/hooks/common/usePresignedUpload'
 import { problemsApi, type ProblemCreateRequest, type ProblemUpdateRequest } from '@/api/problems'
 
 export function useProblems(examId: number, initialSheetUrl?: string | null) {

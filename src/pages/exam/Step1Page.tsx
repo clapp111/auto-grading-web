@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { SubStep1 } from '@/features/exam/step1/components/SubStep1'
-import { SubStep2 } from '@/features/exam/step1/components/SubStep2'
-import { SubStep3 } from '@/features/exam/step1/components/SubStep3'
+import { SubStep1 } from '@/components/exam/SubStep1'
+import { SubStep2 } from '@/components/exam/SubStep2'
+import { SubStep3 } from '@/components/exam/SubStep3'
 import { examsApi } from '@/api/exams'
 
 type SubStep = 0 | 1 | 2

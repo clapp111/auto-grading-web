@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { ocrApi } from '@/api/ocr'
 import { sheetsApi } from '@/api/sheets'
 import { problemsApi } from '@/api/problems'
-import { useJobPolling } from '@/hooks/useJobPolling'
+import { useJobPolling } from '@/hooks/common/useJobPolling'
 import type { ApiResponse, OcrResultResponse } from '@/types/dto'
 import type { UpdateOcrResultBody } from '@/api/ocr'
 

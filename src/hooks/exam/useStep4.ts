@@ -5,11 +5,11 @@ import { examsApi } from '@/api/exams'
 import { problemsApi } from '@/api/problems'
 import { sheetsApi } from '@/api/sheets'
 import { regionsApi } from '@/api/regions'
-import { useJobPolling } from '@/hooks/useJobPolling'
-import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/features/exam/step1/constants'
+import { useJobPolling } from '@/hooks/common/useJobPolling'
+import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/types/constants'
 import type { Region, Point, AnswerRegionResponse } from '@/types/dto'
 import type { LayoutMode, RegionShape } from '@/types/enums'
-import type { DrawSelection } from '@/features/exam/step1/components/PdfCanvas'
+import type { DrawSelection } from '@/components/exam/PdfCanvas'
 
 export interface LocalRegion {
   tempId: string

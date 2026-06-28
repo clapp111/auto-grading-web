@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import axios from 'axios'
 import { sheetsApi, type AnswerSheetPatchRequest, type IdRegionSaveRequest } from '@/api/sheets'
-import { useJobPolling } from '@/hooks/useJobPolling'
+import { useJobPolling } from '@/hooks/common/useJobPolling'
 import type { AnswerSheetResponse } from '@/types/dto'
 
 export function useAnswerSheets(examId: number) {

@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Sparkles, Trash2, RefreshCw } from 'lucide-react'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { useRubric } from '@/features/exam/step2/hooks/useRubric'
+import { useRubric } from '@/hooks/exam/useRubric'
 import { examsApi } from '@/api/exams'
 import { problemsApi, type RubricUpdateRequest } from '@/api/problems'
 import type { ProblemResponse, ModelAnswerResponse, RubricResponse } from '@/types/dto'
-import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/features/exam/step1/constants'
+import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/types/constants'
 import { cn } from '@/lib/utils'
 
 // ── 루브릭 기준 카드 ──────────────────────────────────────────────────

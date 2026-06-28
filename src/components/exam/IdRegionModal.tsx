@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { PdfCanvas } from '@/features/exam/step1/components/PdfCanvas'
+import { PdfCanvas, type DrawSelection } from '@/components/exam/PdfCanvas'
 import { sheetsApi, type IdRegionSaveRequest } from '@/api/sheets'
 import type { Region, AnswerSheetResponse } from '@/types/dto'
 
@@ -47,7 +47,8 @@ export function IdRegionModal({ firstSheet, sheetCount, onSave, onClose, saving 
       : []),
   ]
 
-  const handleDrawComplete = (region: Region) => {
+  const handleDrawComplete = (selection: DrawSelection) => {
+    const region = selection.bbox_region
     if (activeTarget === 'name') {
       setNameRegion(region)
       if (!studentNoRegion) setActiveTarget('student_no')

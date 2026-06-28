@@ -3,9 +3,9 @@ import { useDropzone } from 'react-dropzone'
 import { ChevronDown, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
-import { useProblems } from '../hooks/useProblems'
-import { useModelAnswerOcr } from '../hooks/useModelAnswerOcr'
-import { TYPE_COLORS, TYPE_LABELS_KO, OCR_REQUIRED_TYPES } from '../constants'
+import { useProblems } from '../../hooks/exam/useProblems'
+import { useModelAnswerOcr } from '../../hooks/exam/useModelAnswerOcr'
+import { TYPE_COLORS, TYPE_LABELS_KO, OCR_REQUIRED_TYPES } from '../../types/constants'
 
 import type { ProgrammingLanguage } from '@/types/enums'
 import { cn } from '@/lib/utils'
@@ -27,7 +27,6 @@ interface SubStep2Props {
 
 export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubStep2Props) {
   const [currentPage, setCurrentPage] = useState(1)
-  const drawMode = 'rect' as const
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState<number | null>(null)
   const [selectedLanguage, setSelectedLanguage] = useState<ProgrammingLanguage>('CPP')
