@@ -53,21 +53,19 @@ export function useStep4(examId: number) {
     enabled: !!examId,
   })
 
-  const { data: problemsRes } = useQuery({
+  const { data: problems = [] } = useQuery({
     queryKey: ['problems', examId],
-    queryFn: () => problemsApi.list(examId),
+    queryFn: () => problemsApi.list(examId).then((r) => r.data ?? []),
     enabled: !!examId,
   })
 
-  const { data: sheetsRes } = useQuery({
+  const { data: sheets = [] } = useQuery({
     queryKey: ['answer-sheets', examId],
-    queryFn: () => sheetsApi.list(examId),
+    queryFn: () => sheetsApi.list(examId).then((r) => r.data ?? []),
     enabled: !!examId,
   })
 
   const exam = examRes?.data ?? null
-  const problems = problemsRes?.data ?? []
-  const sheets = sheetsRes?.data ?? []
   const selectedSheet = sheets[selectedSheetIdx] ?? null
   const firstSheet = sheets[0] ?? null
 
