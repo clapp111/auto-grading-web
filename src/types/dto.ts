@@ -48,6 +48,16 @@ export interface PresignedUrlResponse {
   file_key: string
 }
 
+// answer-sheet 전용 — server가 생성한 answer_sheet_id를 함께 반환
+export interface AnswerSheetPresignedUrlResponse extends PresignedUrlResponse {
+  answer_sheet_id: number
+}
+
+export interface UploadCompleteResponse {
+  answer_sheet_id: number
+  job_id: number | null
+}
+
 // ── 인증 / 회원 ───────────────────────────────────────────────────────
 export interface MemberResponse {
   member_id: number
