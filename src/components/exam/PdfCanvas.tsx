@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { Stage, Layer, Rect, Text, Line, Circle } from 'react-konva'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react'
 import type { Region, Point } from '@/types/dto'
 import type { RegionShape } from '@/types/enums'
 
@@ -50,6 +50,10 @@ export function PdfCanvas({
 }: PdfCanvasProps) {
   const [numPages, setNumPages] = useState(0)
   const [stageSize, setStageSize] = useState({ width: pageWidth, height: 600 })
+  const [zoom, setZoom] = useState(1)
+
+  const changeZoom = (delta: number) =>
+    setZoom((z) => Math.min(3, Math.max(0.5, Math.round((z + delta) * 4) / 4)))
 
   // RECT 드래그 상태
   const [drawing, setDrawing] = useState(false)
@@ -196,22 +200,45 @@ export function PdfCanvas({
   return (
     <div className="flex flex-col h-full select-none">
       {numPages > 0 && (
-        <div className="flex items-center justify-center gap-3 mb-[14px]">
-          <button
-            className="text-[#8a8f99] disabled:opacity-30 hover:text-[#5f636b] transition-colors"
-            disabled={currentPage <= 1}
-            onClick={() => onPageChange?.(currentPage - 1)}
-          >
-            <ChevronLeft size={15} />
-          </button>
-          <span className="text-[12.5px] text-[#8a8f99]">{currentPage} / {numPages} 페이지</span>
-          <button
-            className="text-[#8a8f99] disabled:opacity-30 hover:text-[#5f636b] transition-colors"
-            disabled={currentPage >= numPages}
-            onClick={() => onPageChange?.(currentPage + 1)}
-          >
-            <ChevronRight size={15} />
-          </button>
+        <div className="flex items-center justify-between mb-[14px]">
+          {/* 확대/축소 */}
+          <div className="flex items-center gap-[4px]">
+            <button
+              className="w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[#8a8f99] hover:bg-[#eef0f3] hover:text-[#5f636b] disabled:opacity-30 transition-colors"
+              disabled={zoom <= 0.5}
+              onClick={() => changeZoom(-0.25)}
+            >
+              <Minus size={12} />
+            </button>
+            <span className="text-[12px] text-[#8a8f99] w-[36px] text-center tabular-nums">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              className="w-[24px] h-[24px] flex items-center justify-center rounded-[6px] text-[#8a8f99] hover:bg-[#eef0f3] hover:text-[#5f636b] disabled:opacity-30 transition-colors"
+              disabled={zoom >= 3}
+              onClick={() => changeZoom(0.25)}
+            >
+              <Plus size={12} />
+            </button>
+          </div>
+          {/* 페이지 이동 */}
+          <div className="flex items-center gap-[6px]">
+            <button
+              className="text-[#8a8f99] disabled:opacity-30 hover:text-[#5f636b] transition-colors"
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange?.(currentPage - 1)}
+            >
+              <ChevronLeft size={15} />
+            </button>
+            <span className="text-[12.5px] text-[#8a8f99]">{currentPage} / {numPages} 페이지</span>
+            <button
+              className="text-[#8a8f99] disabled:opacity-30 hover:text-[#5f636b] transition-colors"
+              disabled={currentPage >= numPages}
+              onClick={() => onPageChange?.(currentPage + 1)}
+            >
+              <ChevronRight size={15} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -222,7 +249,7 @@ export function PdfCanvas({
       )}
 
       <div
-        className="flex-1 flex items-start justify-center overflow-hidden"
+        className="flex-1 flex items-start justify-center overflow-auto"
         style={{ cursor: drawMode ? 'crosshair' : 'default' }}
       >
         <div
@@ -242,7 +269,7 @@ export function PdfCanvas({
               loading={
                 <div
                   className="flex items-center justify-center bg-white"
-                  style={{ width: pageWidth, height: stageSize.height }}
+                  style={{ width: pageWidth * zoom, height: stageSize.height }}
                 >
                   <span className="text-[13px] text-[#9aa0ab]">PDF 로딩 중...</span>
                 </div>
@@ -258,7 +285,7 @@ export function PdfCanvas({
             >
               <Page
                 pageNumber={currentPage}
-                width={pageWidth}
+                width={pageWidth * zoom}
                 renderAnnotationLayer={false}
                 renderTextLayer={false}
               />
