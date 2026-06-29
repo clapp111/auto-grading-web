@@ -153,7 +153,7 @@ function GradingListView({
           type="button"
           onClick={onNext}
           disabled={isNextDisabled}
-          className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:bg-[#c1c5cd] disabled:shadow-none disabled:cursor-not-allowed"
         >
           다음: 성적 검토
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -826,7 +826,7 @@ export default function Step6Page() {
           onSelectProblem={openDetail}
           onPrev={() => navigate(`/exam/${examId}/step/5`)}
           onNext={handleNext}
-          isNextDisabled={isAdvancing}
+          isNextDisabled={isAdvancing || totalCount === 0 || confirmedCount < totalCount}
         />
       ) : selectedProblem && isAutoType(selectedProblem.type) ? (
         <AutoGradeDetailView
