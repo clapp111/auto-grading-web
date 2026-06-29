@@ -98,13 +98,15 @@ export function ExamSidebar({
               {isActive && subLabels.length > 0 && (
                 <div className="ml-[32px] mt-[2px] mb-[4px] flex flex-col gap-[1px]">
                   {subLabels.map((sub, i) => (
-                    <div
+                    <button
                       key={i}
+                      type="button"
+                      onClick={() => navigate(`/exam/${examId}/step/${step}/${i + 1}`)}
                       className={cn(
-                        'flex items-center gap-[7px] px-[10px] py-[6px] rounded-[7px] text-[12.5px]',
+                        'w-full flex items-center gap-[7px] px-[10px] py-[6px] rounded-[7px] text-[12.5px] text-left transition-colors',
                         i === currentSub
                           ? 'text-accent font-semibold bg-accent/[.06]'
-                          : 'text-[#9aa0ab]',
+                          : 'text-[#9aa0ab] hover:bg-[#f7f8fa]',
                       )}
                     >
                       <span
@@ -114,7 +116,7 @@ export function ExamSidebar({
                         )}
                       />
                       {sub}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

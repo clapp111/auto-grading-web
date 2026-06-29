@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 
 // Lazy-loaded pages (코드 스플리팅)
@@ -14,6 +14,11 @@ const Step4Page      = lazy(() => import('@/pages/exam/Step4Page'))
 const Step5Page      = lazy(() => import('@/pages/exam/Step5Page'))
 const Step6Page      = lazy(() => import('@/pages/exam/Step6Page'))
 const Step7Page      = lazy(() => import('@/pages/exam/Step7Page'))
+
+function Step1Redirect() {
+  const { examId } = useParams<{ examId: string }>()
+  return <Navigate to={`/exam/${examId}/step/1/1`} replace />
+}
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -44,6 +49,10 @@ export const router = createBrowserRouter([
   },
   {
     path: '/exam/:examId/step/1',
+    element: <PrivateRoute><Step1Redirect /></PrivateRoute>,
+  },
+  {
+    path: '/exam/:examId/step/1/:sub',
     element: <PrivateRoute><Wrap><Step1Page /></Wrap></PrivateRoute>,
   },
   {

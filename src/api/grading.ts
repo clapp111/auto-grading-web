@@ -52,7 +52,7 @@ export const gradingApi = {
 
   getResults: (examId: number) =>
     apiClient
-      .get<ApiResponse<ExamResultResponse[]>>(`/exams/${examId}/results`)
+      .get<ApiResponse<ExamResultResponse>>(`/exams/${examId}/results`)
       .then((r) => r.data),
 
   getStatistics: (examId: number) =>

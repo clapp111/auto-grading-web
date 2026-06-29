@@ -580,11 +580,9 @@ export default function Step5Page() {
                 <button
                   type="button"
                   disabled={!selectedResult}
-                  onClick={() => navProblem(isLastProblem ? 0 : 1)}
+                  onClick={isLastProblem ? goToList : () => navProblem(1)}
                   className="flex items-center gap-[6px] h-[44px] px-[20px] bg-[#f1f2f5] text-[#4b4f57] text-[14.5px] font-bold rounded-[11px] hover:bg-[#e8eaed] disabled:opacity-40 transition-colors"
                   style={{ cursor: isLastProblem ? 'default' : undefined }}
-                  // 마지막 문제면 goToList 호출, 아니면 다음 문제로
-                  {...(isLastProblem ? { onClick: goToList } : { onClick: () => navProblem(1) })}
                 >
                   {isLastProblem ? '현황으로' : '다음 문제'}
                   {!isLastProblem && (

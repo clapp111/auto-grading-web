@@ -69,7 +69,7 @@ export function useStep5(examId: number) {
   })
 
   // 선택 학생의 OCR 결과
-  const { data: resultsRes, refetch: refetchResults } = useQuery({
+  const { data: resultsRes } = useQuery({
     queryKey: ['ocr-results', selectedStudent?.student_id],
     queryFn: () => ocrApi.getStudentResults(selectedStudent!.student_id),
     enabled: !!selectedStudent,

@@ -455,7 +455,6 @@ function LlmGradeDetailView({
   isConfirming,
   isUpdating,
   selectedGradeIdx,
-  setSelectedGradeIdx,
   selectedGrade,
   isLastGrade,
   onRunGrading,
@@ -471,7 +470,6 @@ function LlmGradeDetailView({
   isConfirming: boolean
   isUpdating: boolean
   selectedGradeIdx: number
-  setSelectedGradeIdx: (i: number) => void
   selectedGrade: GradeResponse | null
   isLastGrade: boolean
   onRunGrading: () => void
@@ -779,7 +777,6 @@ export default function Step6Page() {
     isGrading,
     runGrading,
     selectedGradeIdx,
-    setSelectedGradeIdx,
     navGrade,
     selectedGrade,
     isLastGrade,
@@ -832,7 +829,6 @@ export default function Step6Page() {
           isConfirming={isConfirming}
           isUpdating={isUpdating}
           selectedGradeIdx={selectedGradeIdx}
-          setSelectedGradeIdx={setSelectedGradeIdx}
           selectedGrade={selectedGrade}
           isLastGrade={isLastGrade}
           onRunGrading={runGrading}
