@@ -40,6 +40,7 @@ export function useStep5(examId: number) {
   useJobPolling({
     jobId: ocrJobId ? String(ocrJobId) : null,
     onComplete: () => {
+      qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
       setOcrPhase('done')
       setOcrJobId(null)
     },
@@ -169,10 +170,14 @@ export function useStep5(examId: number) {
   const saveChoice = useCallback(
     (choice: number | null) => {
       if (!selectedResult) return
+      const previousChoice = localChoice
       setLocalChoice(choice)
-      updateMutation.mutate({ resultId: selectedResult.ocr_result_id, body: { marked_choice: choice } })
+      updateMutation.mutate(
+        { resultId: selectedResult.ocr_result_id, body: { marked_choice: choice } },
+        { onError: () => setLocalChoice(previousChoice) },
+      )
     },
-    [selectedResult, updateMutation],
+    [selectedResult, localChoice, updateMutation],
   )
 
   const handleConfirm = useCallback(() => {

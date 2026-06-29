@@ -271,9 +271,10 @@ interface SubStep3Props {
   onNext: () => void
   onBack: () => void
   onGoToOcr: () => void
+  isNextDisabled?: boolean
 }
 
-export function SubStep3({ examId, onNext, onBack, onGoToOcr }: SubStep3Props) {
+export function SubStep3({ examId, onNext, onBack, onGoToOcr, isNextDisabled }: SubStep3Props) {
   const { problems } = useProblems(examId)
   const { modelAnswers } = useModelAnswerOcr(examId)
 
@@ -332,7 +333,8 @@ export function SubStep3({ examId, onNext, onBack, onGoToOcr }: SubStep3Props) {
         <button
           type="button"
           onClick={onNext}
-          className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity"
+          disabled={isNextDisabled}
+          className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
           다음: 루브릭 설정
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { ChevronDown, FileText } from 'lucide-react'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { PdfCanvas } from '@/components/exam/PdfCanvas'
@@ -204,6 +206,21 @@ export default function Step4Page() {
   const { examId: examIdStr } = useParams<{ examId: string }>()
   const examId = Number(examIdStr)
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [isAdvancing, setIsAdvancing] = useState(false)
+
+  const handleNext = async () => {
+    setIsAdvancing(true)
+    try {
+      await examsApi.advance(examId, 4)
+      await qc.invalidateQueries({ queryKey: ['exam', examId] })
+      navigate(`/exam/${examId}/step/5`)
+    } catch {
+      toast.error('진행 상태 업데이트에 실패했습니다.')
+    } finally {
+      setIsAdvancing(false)
+    }
+  }
 
   const {
     exam,
@@ -427,8 +444,9 @@ export default function Step4Page() {
           </button>
           <button
             type="button"
-            onClick={() => { void examsApi.advance(examId, 4); navigate(`/exam/${examId}/step/5`) }}
-            className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity"
+            onClick={handleNext}
+            disabled={isAdvancing}
+            className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             다음: 답안 OCR 확인
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

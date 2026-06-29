@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { SubStep1 } from '@/components/exam/SubStep1'
 import { SubStep2 } from '@/components/exam/SubStep2'
@@ -10,6 +12,8 @@ export default function Step1Page() {
   const { examId: examIdStr, sub: subStr } = useParams<{ examId: string; sub: string }>()
   const examId = Number(examIdStr)
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [isAdvancing, setIsAdvancing] = useState(false)
 
   const urlSub = Number(subStr) || 1
   const currentSub = Math.min(Math.max(urlSub - 1, 0), 2)
@@ -23,12 +27,20 @@ export default function Step1Page() {
   const problemSheetUrl = examRes?.data?.problem_sheet_url ?? null
   const modelAnswerUrl = examRes?.data?.model_answer_url ?? null
 
-  const goNext = () => {
+  const goNext = async () => {
     if (urlSub < 3) {
       navigate(`/exam/${examId}/step/1/${urlSub + 1}`)
     } else {
-      void examsApi.advance(examId, 1)
-      navigate(`/exam/${examId}/step/2`)
+      setIsAdvancing(true)
+      try {
+        await examsApi.advance(examId, 1)
+        await qc.invalidateQueries({ queryKey: ['exam', examId] })
+        navigate(`/exam/${examId}/step/2`)
+      } catch {
+        toast.error('진행 상태 업데이트에 실패했습니다.')
+      } finally {
+        setIsAdvancing(false)
+      }
     }
   }
 
@@ -70,6 +82,7 @@ export default function Step1Page() {
             examId={examId}
             onNext={goNext}
             onBack={goBack}
+            isNextDisabled={isAdvancing}
             onGoToOcr={() => navigate(`/exam/${examId}/step/1/2`)}
           />
         )}

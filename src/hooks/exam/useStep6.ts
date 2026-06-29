@@ -62,6 +62,7 @@ export function useStep6(examId: number) {
       setJobId(null)
       qc.invalidateQueries({ queryKey: ['grades', selectedProblem?.problem_id] })
       qc.invalidateQueries({ queryKey: ['grading-progress', examId] })
+      qc.invalidateQueries({ queryKey: ['model-answers', examId] })
     },
     onError: () => {
       setJobId(null)
