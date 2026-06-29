@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
@@ -92,17 +93,15 @@ function AnswerImagePanel({
 
 // ── 우측 패널: 객관식 ────────────────────────────────────────────────────────
 function MultipleChoicePanel({
-  result,
+  locked,
   localChoice,
   onSaveChoice,
 }: {
-  result: OcrResultResponse
+  locked: boolean
   localChoice: number | null
   onSaveChoice: (choice: number | null) => void
 }) {
-  // 보기 개수: model-answer의 choice_count가 없으므로 5 기본값
   const choiceCount = 5
-  const isReviewed = result.status === 'REVIEWED'
 
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 px-[26px] py-[22px] gap-[20px]">
@@ -114,14 +113,14 @@ function MultipleChoicePanel({
             <button
               key={n}
               type="button"
-              disabled={isReviewed}
+              disabled={locked}
               onClick={() => onSaveChoice(isSelected ? null : n)}
               className={cn(
                 'w-[46px] h-[46px] rounded-[12px] flex items-center justify-center text-[16px] font-bold transition-all',
                 isSelected
                   ? 'border-2 border-accent bg-accent/[.08] text-accent shadow-[0_2px_8px_rgba(79,70,229,.3)]'
                   : 'border-[1.5px] border-[#e2e4e9] text-[#aab0ba] hover:border-[#c8ccd3]',
-                isReviewed && 'opacity-60 cursor-not-allowed',
+                locked && 'opacity-60 cursor-not-allowed',
               )}
             >
               {n}
@@ -134,11 +133,11 @@ function MultipleChoicePanel({
       <div className="flex gap-[9px]">
         <button
           type="button"
-          disabled={isReviewed}
+          disabled={locked}
           onClick={() => onSaveChoice(null)}
           className={cn(
             'flex items-center gap-[6px] h-[34px] px-[13px] border border-[#e2e4e9] rounded-[9px] text-[12.5px] text-[#71757e] font-semibold hover:bg-[#f7f8fa] transition-colors',
-            isReviewed && 'opacity-50 cursor-not-allowed',
+            locked && 'opacity-50 cursor-not-allowed',
           )}
         >
           무응답 표시
@@ -154,17 +153,16 @@ function MultipleChoicePanel({
 
 // ── 우측 패널: 서술형 ────────────────────────────────────────────────────────
 function DescriptivePanel({
-  result,
+  locked,
   localText,
   setLocalText,
   onBlur,
 }: {
-  result: OcrResultResponse
+  locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
 }) {
-  const isReviewed = result.status === 'REVIEWED'
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 min-h-0 p-[18px]">
       <div className="flex-1 border border-[#e6e8ec] rounded-[12px] overflow-hidden flex flex-col min-h-0">
@@ -173,7 +171,7 @@ function DescriptivePanel({
           value={localText}
           onChange={(e) => setLocalText(e.target.value)}
           onBlur={onBlur}
-          readOnly={isReviewed}
+          readOnly={locked}
           placeholder="OCR 인식 텍스트가 없습니다"
         />
       </div>
@@ -183,29 +181,28 @@ function DescriptivePanel({
 
 // ── 우측 패널: 단답형 ────────────────────────────────────────────────────────
 function ShortAnswerPanel({
-  result,
+  locked,
   localText,
   setLocalText,
   onBlur,
 }: {
-  result: OcrResultResponse
+  locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
 }) {
-  const isReviewed = result.status === 'REVIEWED'
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 px-[26px] py-[22px]">
       <input
         type="text"
         className={cn(
           'w-full border-[1.5px] border-[#e4e6eb] bg-white rounded-[12px] px-[18px] py-[14px] text-[22px] font-semibold text-[#15171d] font-mono outline-none focus:border-accent transition-colors',
-          isReviewed && 'opacity-60 cursor-not-allowed bg-[#fafafa]',
+          locked && 'opacity-60 cursor-not-allowed bg-[#fafafa]',
         )}
         value={localText}
         onChange={(e) => setLocalText(e.target.value)}
         onBlur={onBlur}
-        readOnly={isReviewed}
+        readOnly={locked}
         placeholder="—"
       />
     </div>
@@ -215,18 +212,19 @@ function ShortAnswerPanel({
 // ── 우측 패널: 손코딩 ────────────────────────────────────────────────────────
 function CodingPanel({
   result,
+  locked,
   localText,
   setLocalText,
   onBlur,
 }: {
   result: OcrResultResponse
+  locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
 }) {
   const lang = result.problem_language ?? 'CPP'
   const fileName = `answer_${result.problem_label.toLowerCase()}.${LANG_EXT[lang] ?? 'txt'}`
-  const isReviewed = result.status === 'REVIEWED'
 
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 min-h-0 p-[18px]">
@@ -251,7 +249,7 @@ function CodingPanel({
             value={localText}
             onChange={(e) => setLocalText(e.target.value)}
             onBlur={onBlur}
-            readOnly={isReviewed}
+            readOnly={locked}
             onKeyDown={(e) => {
               if (e.key === 'Tab') {
                 e.preventDefault()
@@ -303,16 +301,22 @@ export default function Step5Page() {
     localChoice,
     saveChoice,
     handleConfirm,
+    handleSaveAndAdvance,
     isConfirming,
+    isUpdating,
     isLastProblem,
     pdfUrl,
   } = useStep5(examId)
 
+  const [editMode, setEditMode] = useState(false)
+  useEffect(() => { setEditMode(false) }, [selectedResult?.ocr_result_id])
+
   const confirmedCount = progress?.confirmed_student_count ?? 0
   const totalCount = progress?.total_student_count ?? 0
   const pct = totalCount > 0 ? Math.round((confirmedCount / totalCount) * 100) : 0
-  const confirmLabel = isLastProblem ? '확인 완료 · 다음 학생' : '확인 완료 · 다음 문제'
   const isFirstProblem = selectedProblemIdx === 0
+  const isCurrentReviewed = selectedResult?.status === 'REVIEWED'
+  const locked = isCurrentReviewed && !editMode
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
@@ -510,14 +514,14 @@ export default function Step5Page() {
               <AnswerImagePanel result={selectedResult} pdfUrl={pdfUrl} />
               {selectedResult.problem_type === 'MULTIPLE_CHOICE' && (
                 <MultipleChoicePanel
-                  result={selectedResult}
+                  locked={locked}
                   localChoice={localChoice}
                   onSaveChoice={saveChoice}
                 />
               )}
               {selectedResult.problem_type === 'SHORT_ANSWER' && (
                 <ShortAnswerPanel
-                  result={selectedResult}
+                  locked={locked}
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
@@ -525,7 +529,7 @@ export default function Step5Page() {
               )}
               {selectedResult.problem_type === 'DESCRIPTIVE' && (
                 <DescriptivePanel
-                  result={selectedResult}
+                  locked={locked}
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
@@ -534,6 +538,7 @@ export default function Step5Page() {
               {selectedResult.problem_type === 'CODING' && (
                 <CodingPanel
                   result={selectedResult}
+                  locked={locked}
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
@@ -556,19 +561,70 @@ export default function Step5Page() {
             >
               ← 이전 문제
             </button>
-            <button
-              type="button"
-              disabled={isConfirming || !selectedResult}
-              onClick={handleConfirm}
-              className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {isConfirming ? '처리 중...' : confirmLabel}
-              {!isConfirming && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+
+            <div className="flex items-center gap-[10px]">
+              {/* REVIEWED 상태이고 수정 모드가 아닐 때 수정 버튼 표시 */}
+              {isCurrentReviewed && !editMode && (
+                <button
+                  type="button"
+                  onClick={() => setEditMode(true)}
+                  className="h-[44px] px-[18px] border border-[#e0e3e9] bg-white rounded-[11px] text-[14px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] transition-colors"
+                >
+                  수정
+                </button>
               )}
-            </button>
+
+              {/* 오른쪽 주 버튼 */}
+              {isCurrentReviewed && !editMode ? (
+                /* 이미 확정 + 수정 모드 아님 → 그냥 다음으로 이동 */
+                <button
+                  type="button"
+                  disabled={!selectedResult}
+                  onClick={() => navProblem(isLastProblem ? 0 : 1)}
+                  className="flex items-center gap-[6px] h-[44px] px-[20px] bg-[#f1f2f5] text-[#4b4f57] text-[14.5px] font-bold rounded-[11px] hover:bg-[#e8eaed] disabled:opacity-40 transition-colors"
+                  style={{ cursor: isLastProblem ? 'default' : undefined }}
+                  // 마지막 문제면 goToList 호출, 아니면 다음 문제로
+                  {...(isLastProblem ? { onClick: goToList } : { onClick: () => navProblem(1) })}
+                >
+                  {isLastProblem ? '현황으로' : '다음 문제'}
+                  {!isLastProblem && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              ) : isCurrentReviewed && editMode ? (
+                /* 수정 모드 → 저장하고 다음으로 (재확정 없이) */
+                <button
+                  type="button"
+                  disabled={isUpdating || !selectedResult}
+                  onClick={() => { handleSaveAndAdvance(); setEditMode(false) }}
+                  className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {isUpdating ? '저장 중...' : isLastProblem ? '저장 · 다음 학생' : '저장 · 다음 문제'}
+                  {!isUpdating && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              ) : (
+                /* 미확정(RAW) → 기존 확인 완료 버튼 */
+                <button
+                  type="button"
+                  disabled={isConfirming || !selectedResult}
+                  onClick={handleConfirm}
+                  className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {isConfirming ? '처리 중...' : isLastProblem ? '확인 완료 · 다음 학생' : '확인 완료 · 다음 문제'}
+                  {!isConfirming && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </main>
       )}

@@ -188,6 +188,27 @@ export function useStep5(examId: number) {
     }
   }, [selectedResult, localText, updateMutation, confirmMutation])
 
+  // 이미 REVIEWED된 결과를 수정 후 다음으로 이동 (재확정 없이)
+  const handleSaveAndAdvance = useCallback(() => {
+    if (!selectedResult) return
+    const advance = () => {
+      if (selectedProblemIdx < results.length - 1) {
+        setSelectedProblemIdx((p) => p + 1)
+      } else {
+        setView('list')
+        refetchProgress()
+      }
+    }
+    if (localText !== (selectedResult.text ?? '')) {
+      updateMutation.mutate(
+        { resultId: selectedResult.ocr_result_id, body: { text: localText } },
+        { onSuccess: advance },
+      )
+    } else {
+      advance()
+    }
+  }, [selectedResult, localText, updateMutation, selectedProblemIdx, results.length, refetchProgress])
+
   const isLastProblem = selectedProblemIdx === results.length - 1
 
   return {
@@ -219,6 +240,7 @@ export function useStep5(examId: number) {
     saveChoice,
     // 액션
     handleConfirm,
+    handleSaveAndAdvance,
     isConfirming: confirmMutation.isPending,
     isUpdating: updateMutation.isPending,
     isLastProblem,
