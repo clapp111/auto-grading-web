@@ -28,4 +28,7 @@ export const examsApi = {
 
   delete: (examId: number) =>
     apiClient.delete<ApiResponse<null>>(`/exams/${examId}`).then((r) => r.data),
+
+  advance: (examId: number, fromStep: number) =>
+    apiClient.post<ApiResponse<ExamResponse>>(`/exams/${examId}/advance`, { from_step: fromStep }).then((r) => r.data),
 }

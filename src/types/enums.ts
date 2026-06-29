@@ -1,6 +1,6 @@
 export type AffiliationRole = 'PROFESSOR' | 'TEACHER' | 'TUTOR' | 'TA'
 export type Role = 'ADMIN' | 'NORMAL'
-export type ExamStatus = 'DRAFT' | 'SETUP' | 'OCR' | 'GRADING' | 'DONE'
+export type ExamStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7
 export type JobType =
   | 'MODEL_ANSWER_OCR'
   | 'RUBRIC_SUGGEST'

@@ -1,5 +1,5 @@
 import type {
-  AffiliationRole, Role, ExamStatus, LayoutMode,
+  AffiliationRole, Role, ExamStep, LayoutMode,
   ProblemType, ProgrammingLanguage, RubricSource,
   SheetStatus, RegionShape, OCRStatus,
   GradeStatus, GradeMethod, JobType, JobStatus,
@@ -80,7 +80,7 @@ export interface ExamResponse {
   exam_id: number
   name: string
   description: string | null
-  status: ExamStatus
+  step: ExamStep
   layout_mode: LayoutMode
   student_count: number
   created_at: string

@@ -27,6 +27,7 @@ export default function Step1Page() {
     if (urlSub < 3) {
       navigate(`/exam/${examId}/step/1/${urlSub + 1}`)
     } else {
+      void examsApi.advance(examId, 1)
       navigate(`/exam/${examId}/step/2`)
     }
   }
@@ -43,6 +44,7 @@ export default function Step1Page() {
           examName={examName}
           currentStep={1}
           currentSub={currentSub}
+          examStep={examRes?.data?.step}
         />
       </aside>
 

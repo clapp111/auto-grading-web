@@ -5,6 +5,7 @@ import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { PdfCanvas } from '@/components/exam/PdfCanvas'
 import { RegionMappingPanel } from '@/components/exam/RegionMappingPanel'
 import { useStep4 } from '@/hooks/exam/useStep4'
+import { examsApi } from '@/api/exams'
 import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/types/constants'
 import type { AnswerSheetResponse, ProblemResponse } from '@/types/dto'
 import { cn } from '@/lib/utils'
@@ -239,7 +240,7 @@ export default function Step4Page() {
     <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar */}
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={exam?.name} currentStep={4} />
+        <ExamSidebar examId={examId} examName={exam?.name} currentStep={4} examStep={exam?.step} />
       </aside>
 
       {/* Main */}
@@ -426,7 +427,7 @@ export default function Step4Page() {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/exam/${examId}/step/5`)}
+            onClick={() => { void examsApi.advance(examId, 4); navigate(`/exam/${examId}/step/5`) }}
             className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity"
           >
             다음: 답안 OCR 확인

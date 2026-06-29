@@ -17,6 +17,7 @@ interface ExamSidebarProps {
   examName?: string
   currentStep: number
   currentSub?: number
+  examStep?: number
 }
 
 export function ExamSidebar({
@@ -24,8 +25,10 @@ export function ExamSidebar({
   examName,
   currentStep,
   currentSub = 0,
+  examStep,
 }: ExamSidebarProps) {
   const navigate = useNavigate()
+  const maxReachable = Math.max(examStep ?? 0, 1)
 
   return (
     <div className="h-full flex flex-col bg-white border-r border-[#ecedf1]">
@@ -55,11 +58,13 @@ export function ExamSidebar({
         {STEPS.map(({ step, label, subLabels }) => {
           const isActive = step === currentStep
           const isDone = step < currentStep
+          const isReachable = step <= maxReachable
 
           return (
             <div key={step}>
               <button
                 type="button"
+                disabled={!isReachable}
                 onClick={() => navigate(`/exam/${examId}/step/${step}`)}
                 className={cn(
                   'w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[9px] text-left transition-colors',
@@ -67,7 +72,9 @@ export function ExamSidebar({
                     ? 'bg-accent/[.08] text-accent'
                     : isDone
                       ? 'text-[#3a3e46] hover:bg-[#f7f8fa]'
-                      : 'text-[#9aa0ab] hover:bg-[#f7f8fa]',
+                      : isReachable
+                        ? 'text-[#9aa0ab] hover:bg-[#f7f8fa]'
+                        : 'text-[#c8ccd4] cursor-not-allowed',
                 )}
               >
                 {/* 스텝 번호 원 */}

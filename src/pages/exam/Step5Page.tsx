@@ -321,7 +321,7 @@ export default function Step5Page() {
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={5} />
+        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={5} examStep={examRes?.data?.step} />
       </aside>
 
       {/* ── 메인 리스트 뷰 ──────────────────────────────────────────────── */}
@@ -429,7 +429,7 @@ export default function Step5Page() {
             </button>
             <button
               type="button"
-              onClick={() => navigate(`/exam/${examId}/step/6`)}
+              onClick={() => { void examsApi.advance(examId, 5); navigate(`/exam/${examId}/step/6`) }}
               className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity"
             >
               다음: 채점 확정

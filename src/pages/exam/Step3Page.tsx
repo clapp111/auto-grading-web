@@ -186,7 +186,7 @@ export default function Step3Page() {
     <div className="flex h-screen overflow-hidden bg-white">
       {/* 사이드바 */}
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={3} />
+        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={3} examStep={examRes?.data?.step} />
       </aside>
 
       {/* 메인 */}
@@ -322,7 +322,7 @@ export default function Step3Page() {
           </button>
           <button
             type="button"
-            onClick={() => navigate(`/exam/${examId}/step/4`)}
+            onClick={() => { void examsApi.advance(examId, 3); navigate(`/exam/${examId}/step/4`) }}
             className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity"
           >
             다음: 답안 영역 지정

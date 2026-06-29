@@ -796,7 +796,7 @@ export default function Step6Page() {
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={6} />
+        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={6} examStep={examRes?.data?.step} />
       </aside>
 
       {view === 'list' ? (
@@ -806,7 +806,7 @@ export default function Step6Page() {
           totalCount={totalCount}
           onSelectProblem={openDetail}
           onPrev={() => navigate(`/exam/${examId}/step/5`)}
-          onNext={() => navigate(`/exam/${examId}/step/7`)}
+          onNext={() => { void examsApi.advance(examId, 6); navigate(`/exam/${examId}/step/7`) }}
         />
       ) : selectedProblem && isAutoType(selectedProblem.type) ? (
         <AutoGradeDetailView

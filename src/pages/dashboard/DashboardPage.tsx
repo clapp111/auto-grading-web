@@ -13,18 +13,22 @@ import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/api/auth'
 import { examsApi } from '@/api/exams'
 import type { ExamResponse } from '@/types/dto'
-import type { ExamStatus } from '@/types/enums'
+import type { ExamStep } from '@/types/enums'
+
 import { cn } from '@/lib/utils'
 
 // ── Status config ──────────────────────────────────────────────────────────
-const STATUS_CFG: Record<ExamStatus, {
+const STATUS_CFG: Record<ExamStep, {
   label: string; chipCls: string; barColor: string; progLabel: string; pct: number
 }> = {
-  DRAFT:   { label: '준비',    chipCls: 'bg-[#eef0f3] text-[#8a8f99]',  barColor: '#c2c6cd', progLabel: '아직 시작 안 함', pct: 0   },
-  SETUP:   { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '문제지 세팅 중',  pct: 25  },
-  OCR:     { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: 'OCR 확인 중',    pct: 50  },
-  GRADING: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '채점 진행 중',   pct: 75  },
-  DONE:    { label: '완료',    chipCls: 'bg-[#e7f6ee] text-[#138a5a]',   barColor: '#16a86a', progLabel: '채점 완료',      pct: 100 },
+  0: { label: '준비',    chipCls: 'bg-[#eef0f3] text-[#8a8f99]',  barColor: '#c2c6cd', progLabel: '아직 시작 안 함',   pct: 0   },
+  1: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '문제지 세팅 중',    pct: 14  },
+  2: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '루브릭 설정 중',    pct: 29  },
+  3: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '답안지 업로드 중',  pct: 43  },
+  4: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '답안 영역 지정 중', pct: 57  },
+  5: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: 'OCR 확인 중',      pct: 71  },
+  6: { label: '진행 중', chipCls: 'bg-accent/[.1] text-accent',    barColor: '#4F46E5', progLabel: '채점 진행 중',     pct: 86  },
+  7: { label: '완료',    chipCls: 'bg-[#e7f6ee] text-[#138a5a]',   barColor: '#16a86a', progLabel: '채점 완료',         pct: 100 },
 }
 
 type DisplayFilter = 'ALL' | 'DRAFT' | 'IN_PROGRESS' | 'DONE'
@@ -37,9 +41,9 @@ const FILTER_OPTIONS: { value: DisplayFilter; label: string }[] = [
 
 function matchesFilter(exam: ExamResponse, filter: DisplayFilter): boolean {
   if (filter === 'ALL') return true
-  if (filter === 'IN_PROGRESS') return ['SETUP', 'OCR', 'GRADING'].includes(exam.status)
-  if (filter === 'DONE') return exam.status === 'DONE'
-  return exam.status === 'DRAFT'
+  if (filter === 'IN_PROGRESS') return exam.step >= 1 && exam.step <= 6
+  if (filter === 'DONE') return exam.step === 7
+  return exam.step === 0
 }
 
 function formatRelativeTime(dateStr: string | null): string {
@@ -166,7 +170,7 @@ function ExamCard({ exam, onDelete }: { exam: ExamResponse; onDelete: (id: numbe
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const menuBtnRef = useRef<HTMLButtonElement>(null)
-  const cfg = STATUS_CFG[exam.status]
+  const cfg = STATUS_CFG[exam.step as ExamStep]
   const pctColor = cfg.pct === 100 ? '#138a5a' : cfg.pct === 0 ? '#aab0ba' : '#4b4f57'
 
   useEffect(() => {
@@ -182,7 +186,7 @@ function ExamCard({ exam, onDelete }: { exam: ExamResponse; onDelete: (id: numbe
   return (
     <div
       className="bg-white border border-[#ebedf1] rounded-[14px] p-[20px_20px_17px] flex flex-col cursor-pointer hover:shadow-[0_10px_24px_rgba(20,24,40,.10)] hover:border-[#dfe2e8] transition-all"
-      onClick={() => navigate(`/exam/${exam.exam_id}/step/1`)}
+      onClick={() => navigate(`/exam/${exam.exam_id}/step/${Math.max(exam.step, 1)}`)}
     >
       <div className="flex items-start justify-between mb-[11px]">
         <span className={cn('text-[12px] font-bold px-[11px] py-[4px] rounded-[20px]', cfg.chipCls)}>
@@ -308,9 +312,9 @@ export default function DashboardPage() {
     matchesFilter(e, statusFilter),
   )
 
-  const statsInProgress = allExams.filter(e => ['SETUP', 'OCR', 'GRADING'].includes(e.status)).length
-  const statsDone       = allExams.filter(e => e.status === 'DONE').length
-  const statsDraft      = allExams.filter(e => e.status === 'DRAFT').length
+  const statsInProgress = allExams.filter(e => e.step >= 1 && e.step <= 6).length
+  const statsDone       = allExams.filter(e => e.step === 7).length
+  const statsDraft      = allExams.filter(e => e.step === 0).length
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => examsApi.delete(id),

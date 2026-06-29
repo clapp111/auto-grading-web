@@ -99,7 +99,7 @@ export default function Step7Page() {
   return (
     <div className="relative flex h-screen overflow-hidden bg-white">
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={7} />
+        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={7} examStep={examRes?.data?.step} />
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
