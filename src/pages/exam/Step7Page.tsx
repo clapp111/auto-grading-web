@@ -97,12 +97,12 @@ export default function Step7Page() {
   ]
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-white">
-      <aside className="w-[252px] shrink-0">
+    <div className="relative flex h-screen overflow-hidden bg-white print:h-auto print:overflow-visible">
+      <aside className="w-[252px] shrink-0 print:hidden">
         <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={7} examStep={examRes?.data?.step} />
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         {/* Header */}
         <div className="px-[30px] py-[24px] pb-[20px] border-b border-[#f0f1f4] flex items-start justify-between flex-none">
           <div>
@@ -153,7 +153,7 @@ export default function Step7Page() {
         </div>
 
         {/* Scroll body */}
-        <div className="flex-1 overflow-y-auto px-[30px] py-[24px]">
+        <div className="flex-1 overflow-y-auto px-[30px] py-[24px] print:overflow-visible">
           {/* Stat cards */}
           <div className="flex gap-[14px] mb-[22px]">
             {statCards.map(({ label, value, suffix, unit }) => (
@@ -221,7 +221,7 @@ export default function Step7Page() {
           </div>
 
           {/* Score table */}
-          <div className="border border-[#ebedf1] rounded-[13px] overflow-hidden">
+          <div className="border border-[#ebedf1] rounded-[13px] overflow-hidden print:overflow-visible">
             <div className="flex items-center bg-[#fafbfc] border-b border-[#eef0f3] text-[12.5px] text-[#8a8f99] font-bold">
               <div className="flex-1 px-[18px] py-[12px]">이름</div>
               <div className="w-[110px] px-[16px] py-[12px]">학번</div>

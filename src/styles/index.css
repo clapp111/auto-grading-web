@@ -10,12 +10,20 @@
     box-sizing: border-box;
   }
 
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
   body {
     margin: 0;
     font-family: 'Pretendard Variable', Pretendard, sans-serif;
     -webkit-font-smoothing: antialiased;
     color: #15171d;
     background: #f7f8fa;
+    min-width: 1280px;
   }
 
   ::-webkit-scrollbar {
