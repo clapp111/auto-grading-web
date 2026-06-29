@@ -56,7 +56,7 @@ export function useStep6(examId: number) {
   const grades: GradeResponse[] = gradesQuery.data ?? []
 
   // ── 채점 job 폴링 ────────────────────────────────────────────────────
-  const { isRunning: isGrading } = useJobPolling({
+  const { isRunning: isGrading, job: gradingJob } = useJobPolling({
     jobId,
     onComplete: () => {
       setJobId(null)
@@ -147,6 +147,7 @@ export function useStep6(examId: number) {
     grades,
     isGradesLoading: gradesQuery.isLoading,
     isGrading,
+    gradingJobProgress: gradingJob?.progress_json ?? null,
     runGrading,
     selectedGradeIdx,
     setSelectedGradeIdx,

@@ -456,6 +456,7 @@ function LlmGradeDetailView({
   grades,
   isGradesLoading,
   isGrading,
+  gradingJobProgress,
   isConfirming,
   isUpdating,
   selectedGradeIdx,
@@ -471,6 +472,7 @@ function LlmGradeDetailView({
   grades: GradeResponse[]
   isGradesLoading: boolean
   isGrading: boolean
+  gradingJobProgress: { current: number; total: number; percent: number } | null
   isConfirming: boolean
   isUpdating: boolean
   selectedGradeIdx: number
@@ -592,7 +594,21 @@ function LlmGradeDetailView({
           <div className="w-[48px] h-[48px] rounded-full border-4 border-[#e2e4e9] border-t-accent animate-spin" />
           <div className="text-center">
             <p className="text-[15px] font-bold text-[#15171d] mb-[6px]">LLM이 채점하고 있습니다</p>
-            <p className="text-[13.5px] text-[#71757e]">잠시 기다려주세요...</p>
+            {gradingJobProgress && gradingJobProgress.total > 0 ? (
+              <>
+                <div className="w-[200px] h-[6px] rounded-full bg-[#eef0f3] overflow-hidden mx-auto mt-[10px] mb-[8px]">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-500"
+                    style={{ width: `${gradingJobProgress.percent}%` }}
+                  />
+                </div>
+                <p className="text-[13.5px] text-[#71757e]">
+                  {gradingJobProgress.current} / {gradingJobProgress.total} 채점 완료
+                </p>
+              </>
+            ) : (
+              <p className="text-[13.5px] text-[#71757e]">잠시 기다려주세요...</p>
+            )}
           </div>
         </div>
       ) : isGradesLoading ? (
@@ -794,6 +810,7 @@ export default function Step6Page() {
     grades,
     isGradesLoading,
     isGrading,
+    gradingJobProgress,
     runGrading,
     selectedGradeIdx,
     navGrade,
@@ -846,6 +863,7 @@ export default function Step6Page() {
           grades={grades}
           isGradesLoading={isGradesLoading}
           isGrading={isGrading}
+          gradingJobProgress={gradingJobProgress}
           isConfirming={isConfirming}
           isUpdating={isUpdating}
           selectedGradeIdx={selectedGradeIdx}
@@ -867,9 +885,21 @@ export default function Step6Page() {
               <p className="text-[17px] font-bold text-[#15171d] mb-[6px]">
                 채점을 진행 중입니다
               </p>
-              <p className="text-[13.5px] text-[#71757e]">
-                몇 분가량 걸릴 수 있습니다
-              </p>
+              {gradingJobProgress && gradingJobProgress.total > 0 ? (
+                <>
+                  <div className="w-[200px] h-[6px] rounded-full bg-[#eef0f3] overflow-hidden mx-auto mt-[10px] mb-[8px]">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-500"
+                      style={{ width: `${gradingJobProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-[13.5px] text-[#71757e]">
+                    {gradingJobProgress.current} / {gradingJobProgress.total} 채점 완료
+                  </p>
+                </>
+              ) : (
+                <p className="text-[13.5px] text-[#71757e]">몇 분가량 걸릴 수 있습니다</p>
+              )}
             </div>
           </div>
         </div>
