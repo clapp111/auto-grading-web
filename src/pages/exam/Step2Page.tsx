@@ -22,10 +22,10 @@ function RubricCriterionCard({
   onDelete: () => void
 }) {
   const [text, setText] = useState(rubric.text)
-  const [scoreStr, setScoreStr] = useState(String(rubric.allocated_score))
+  const [scoreStr, setScoreStr] = useState(String(Math.round(rubric.allocated_score)))
 
   useEffect(() => { setText(rubric.text) }, [rubric.text])
-  useEffect(() => { setScoreStr(String(rubric.allocated_score)) }, [rubric.allocated_score])
+  useEffect(() => { setScoreStr(String(Math.round(rubric.allocated_score))) }, [rubric.allocated_score])
 
   const handleTextBlur = () => {
     const trimmed = text.trim()
@@ -33,11 +33,11 @@ function RubricCriterionCard({
   }
 
   const handleScoreBlur = () => {
-    const n = parseFloat(scoreStr)
-    if (!isNaN(n) && n >= 0 && n !== rubric.allocated_score) {
+    const n = Math.round(parseFloat(scoreStr))
+    if (!isNaN(n) && n >= 0 && n !== Math.round(rubric.allocated_score)) {
       onUpdate({ allocated_score: n })
     } else {
-      setScoreStr(String(rubric.allocated_score))
+      setScoreStr(String(Math.round(rubric.allocated_score)))
     }
   }
 
@@ -70,7 +70,7 @@ function RubricCriterionCard({
           <input
             type="number"
             min="0"
-            step="0.5"
+            step="1"
             value={scoreStr}
             onChange={e => setScoreStr(e.target.value)}
             onBlur={handleScoreBlur}
@@ -103,8 +103,6 @@ function RubricPanel({
     useRubric(problem.problem_id)
 
   const totalAllocated = rubric.reduce((sum, r) => sum + r.allocated_score, 0)
-  const color = TYPE_COLORS[problem.type]
-  const textColor = TYPE_TEXT_COLORS[problem.type]
 
   return (
     <div className="flex-1 flex min-h-0">
