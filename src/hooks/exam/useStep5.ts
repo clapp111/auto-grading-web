@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ocrApi } from '@/api/ocr'
@@ -9,7 +9,7 @@ import type { ApiResponse, OcrResultResponse } from '@/types/dto'
 import type { UpdateOcrResultBody } from '@/api/ocr'
 
 export type Step5View = 'list' | 'detail'
-type OcrPhase = 'calling' | 'running' | 'done'
+type AllOcrPhase = 'idle' | 'calling' | 'running'
 
 export function useStep5(examId: number) {
   const qc = useQueryClient()
@@ -20,36 +20,16 @@ export function useStep5(examId: number) {
   const [localText, setLocalText] = useState('')
   const [localChoice, setLocalChoice] = useState<number | null>(null)
 
-  // OCR job 추적
-  const [ocrPhase, setOcrPhase] = useState<OcrPhase>('calling')
-  const [ocrJobId, setOcrJobId] = useState<number | null>(null)
+  // 전체 OCR 상태
+  const [allOcrPhase, setAllOcrPhase] = useState<AllOcrPhase>('idle')
+  const [allOcrJobId, setAllOcrJobId] = useState<number | null>(null)
 
-  useEffect(() => {
-    ocrApi.run(examId)
-      .then((res) => {
-        if (res.data?.job_id) {
-          setOcrJobId(res.data.job_id)
-          setOcrPhase('running')
-        } else {
-          setOcrPhase('done')
-        }
-      })
-      .catch(() => setOcrPhase('done'))
-  }, [examId])
-
-  useJobPolling({
-    jobId: ocrJobId ? String(ocrJobId) : null,
-    onComplete: () => {
-      qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
-      setOcrPhase('done')
-      setOcrJobId(null)
-    },
-    onError: () => {
-      setOcrPhase('done')
-      setOcrJobId(null)
-      toast.error('OCR 처리 중 오류가 발생했습니다.')
-    },
-  })
+  // 개별 학생 OCR 상태
+  const [studentOcrJobId, setStudentOcrJobId] = useState<number | null>(null)
+  const [studentOcrStudentId, setStudentOcrStudentId] = useState<number | null>(null)
+  const [pendingDetailIdx, setPendingDetailIdx] = useState<number | null>(null)
+  // 재실행 시 결과 캐시 무효화 대상 student_id (stale closure 방지용 ref)
+  const rerunStudentIdRef = useRef<number | null>(null)
 
   // 학생별 인식 진행률
   const { data: progressRes, refetch: refetchProgress } = useQuery({
@@ -57,15 +37,28 @@ export function useStep5(examId: number) {
     queryFn: () => ocrApi.getProgress(examId),
     enabled: !!examId,
   })
-
   const progress = progressRes?.data ?? null
   const students = progress?.students ?? []
   const selectedStudent = students[selectedStudentIdx] ?? null
 
+  // 답안지 목록 (student_id → answer_sheet_id 매핑)
+  const { data: sheetsData } = useQuery({
+    queryKey: ['sheets', examId],
+    queryFn: () => sheetsApi.list(examId).then(r => r.data ?? []),
+    enabled: !!examId,
+  })
+  const sheetMap = useMemo(() => {
+    const map = new Map<number, number>()
+    sheetsData?.forEach(s => {
+      if (s.student_id != null) map.set(s.student_id, s.answer_sheet_id)
+    })
+    return map
+  }, [sheetsData])
+
   // 문제 목록 (객관식 choice_count 참조용)
   const { data: problems = [] } = useQuery({
     queryKey: ['problems', examId],
-    queryFn: () => problemsApi.list(examId).then((r) => r.data ?? []),
+    queryFn: () => problemsApi.list(examId).then(r => r.data ?? []),
     enabled: !!examId,
   })
 
@@ -73,7 +66,7 @@ export function useStep5(examId: number) {
   const { data: resultsRes } = useQuery({
     queryKey: ['ocr-results', selectedStudent?.student_id],
     queryFn: () => ocrApi.getStudentResults(selectedStudent!.student_id),
-    enabled: !!selectedStudent,
+    enabled: !!selectedStudent && view === 'detail',
   })
   const results: OcrResultResponse[] = resultsRes?.data ?? []
   const selectedResult = results[selectedProblemIdx] ?? null
@@ -85,14 +78,145 @@ export function useStep5(examId: number) {
     setLocalChoice(selectedResult.marked_choice ?? null)
   }, [selectedResult?.ocr_result_id])
 
-  // 답안지 PDF URL (상세 뷰에서만)
+  // 답안지 PDF URL
   const answerSheetId = selectedResult?.answer_sheet_id ?? null
   const { data: downloadRes } = useQuery({
     queryKey: ['sheet-download', answerSheetId],
-    queryFn: () => sheetsApi.getDownloadUrl(answerSheetId!).then((r) => r.data),
+    queryFn: () => sheetsApi.getDownloadUrl(answerSheetId!).then(r => r.data),
     enabled: !!answerSheetId && view === 'detail',
   })
   const pdfUrl = downloadRes?.url ?? null
+
+  // 전체 OCR 폴링
+  useJobPolling({
+    jobId: allOcrJobId ? String(allOcrJobId) : null,
+    onComplete: () => {
+      qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
+      setAllOcrPhase('idle')
+      setAllOcrJobId(null)
+      toast.success('전체 OCR이 완료되었습니다.')
+    },
+    onError: () => {
+      setAllOcrPhase('idle')
+      setAllOcrJobId(null)
+      toast.error('OCR 처리 중 오류가 발생했습니다.')
+    },
+  })
+
+  // 개별 학생 OCR 폴링
+  useJobPolling({
+    jobId: studentOcrJobId ? String(studentOcrJobId) : null,
+    onComplete: () => {
+      qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
+      if (rerunStudentIdRef.current !== null) {
+        qc.invalidateQueries({ queryKey: ['ocr-results', rerunStudentIdRef.current] })
+        rerunStudentIdRef.current = null
+        toast.success('OCR이 완료되었습니다.')
+      }
+      const idx = pendingDetailIdx
+      setStudentOcrJobId(null)
+      setStudentOcrStudentId(null)
+      setPendingDetailIdx(null)
+      if (idx !== null) {
+        setSelectedStudentIdx(idx)
+        setSelectedProblemIdx(0)
+        setView('detail')
+      }
+    },
+    onError: () => {
+      rerunStudentIdRef.current = null
+      setStudentOcrJobId(null)
+      setStudentOcrStudentId(null)
+      setPendingDetailIdx(null)
+      toast.error('OCR에 실패했습니다.')
+    },
+  })
+
+  // 전체 OCR 실행 (버튼 트리거)
+  const runAllOcr = useCallback(async () => {
+    if (allOcrPhase !== 'idle') return
+    setAllOcrPhase('calling')
+    try {
+      const res = await ocrApi.run(examId)
+      if (res.data?.job_id) {
+        setAllOcrJobId(res.data.job_id)
+        setAllOcrPhase('running')
+      } else {
+        setAllOcrPhase('idle')
+        qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
+      }
+    } catch {
+      setAllOcrPhase('idle')
+      toast.error('OCR 실행에 실패했습니다.')
+    }
+  }, [allOcrPhase, examId, qc])
+
+  // 상세 뷰에서 현재 학생 OCR 재실행
+  const rerunStudentOcr = useCallback(async () => {
+    if (!selectedStudent || allOcrPhase !== 'idle' || !!studentOcrJobId) return
+    const sheetId = sheetMap.get(selectedStudent.student_id)
+    if (!sheetId) {
+      toast.error('답안지 정보를 찾을 수 없습니다.')
+      return
+    }
+    rerunStudentIdRef.current = selectedStudent.student_id
+    setStudentOcrStudentId(selectedStudent.student_id)
+    try {
+      const res = await ocrApi.runSheetOcr(sheetId)
+      if (res.data?.job_id) {
+        setStudentOcrJobId(res.data.job_id)
+      } else {
+        qc.invalidateQueries({ queryKey: ['ocr-results', selectedStudent.student_id] })
+        qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
+        setStudentOcrStudentId(null)
+        rerunStudentIdRef.current = null
+      }
+    } catch {
+      setStudentOcrStudentId(null)
+      rerunStudentIdRef.current = null
+      toast.error('OCR 실행에 실패했습니다.')
+    }
+  }, [selectedStudent, allOcrPhase, studentOcrJobId, sheetMap, examId, qc])
+
+  // 학생 클릭 — OCR 여부에 따라 개별 실행 또는 바로 상세 진입
+  const handleStudentClick = useCallback(async (idx: number) => {
+    const student = students[idx]
+    if (!student) return
+    if (allOcrPhase !== 'idle' || studentOcrJobId) return
+
+    if (student.total_count > 0) {
+      setSelectedStudentIdx(idx)
+      setSelectedProblemIdx(0)
+      setView('detail')
+      return
+    }
+
+    const sheetId = sheetMap.get(student.student_id)
+    if (!sheetId) {
+      toast.error('답안지 정보를 찾을 수 없습니다.')
+      return
+    }
+
+    setStudentOcrStudentId(student.student_id)
+    setPendingDetailIdx(idx)
+    try {
+      const res = await ocrApi.runSheetOcr(sheetId)
+      if (res.data?.job_id) {
+        setStudentOcrJobId(res.data.job_id)
+      } else {
+        setStudentOcrStudentId(null)
+        setPendingDetailIdx(null)
+        qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
+        setSelectedStudentIdx(idx)
+        setSelectedProblemIdx(0)
+        setView('detail')
+      }
+    } catch {
+      setStudentOcrStudentId(null)
+      setPendingDetailIdx(null)
+      toast.error('OCR 실행에 실패했습니다.')
+    }
+  }, [students, sheetMap, allOcrPhase, studentOcrJobId, examId, qc])
 
   // 캐시 내 단일 결과 업데이트 헬퍼
   const patchCache = useCallback(
@@ -101,7 +225,7 @@ export function useStep5(examId: number) {
         ['ocr-results', selectedStudent?.student_id],
         (old: ApiResponse<OcrResultResponse[]> | undefined) => {
           if (!old?.data) return old
-          return { ...old, data: old.data.map((r) => (r.ocr_result_id === resultId ? { ...r, ...patch } : r)) }
+          return { ...old, data: old.data.map(r => r.ocr_result_id === resultId ? { ...r, ...patch } : r) }
         },
       )
     },
@@ -122,7 +246,7 @@ export function useStep5(examId: number) {
     onSuccess: (res, resultId) => {
       if (res.data) patchCache(resultId, res.data)
       if (selectedProblemIdx < results.length - 1) {
-        setSelectedProblemIdx((p) => p + 1)
+        setSelectedProblemIdx(p => p + 1)
       } else {
         setView('list')
         refetchProgress()
@@ -130,12 +254,6 @@ export function useStep5(examId: number) {
     },
     onError: () => toast.error('확정에 실패했습니다.'),
   })
-
-  const openDetail = useCallback((idx: number) => {
-    setSelectedStudentIdx(idx)
-    setSelectedProblemIdx(0)
-    setView('detail')
-  }, [])
 
   const goToList = useCallback(() => {
     setView('list')
@@ -182,7 +300,6 @@ export function useStep5(examId: number) {
 
   const handleConfirm = useCallback(() => {
     if (!selectedResult) return
-    // 텍스트 변경이 있으면 저장 후 확정
     if (localText !== (selectedResult.text ?? '')) {
       updateMutation.mutate(
         { resultId: selectedResult.ocr_result_id, body: { text: localText } },
@@ -193,12 +310,11 @@ export function useStep5(examId: number) {
     }
   }, [selectedResult, localText, updateMutation, confirmMutation])
 
-  // 이미 REVIEWED된 결과를 수정 후 다음으로 이동 (재확정 없이)
   const handleSaveAndAdvance = useCallback(() => {
     if (!selectedResult) return
     const advance = () => {
       if (selectedProblemIdx < results.length - 1) {
-        setSelectedProblemIdx((p) => p + 1)
+        setSelectedProblemIdx(p => p + 1)
       } else {
         setView('list')
         refetchProgress()
@@ -217,8 +333,13 @@ export function useStep5(examId: number) {
   const isLastProblem = selectedProblemIdx === results.length - 1
 
   return {
-    // OCR 실행 상태
-    isOcrLoading: ocrPhase !== 'done',
+    // OCR 실행
+    isAllOcrRunning: allOcrPhase !== 'idle',
+    runAllOcr,
+    studentOcrStudentId,
+    isStudentOcrRunning: !!studentOcrStudentId,
+    handleStudentClick,
+    rerunStudentOcr,
     // 뷰 상태
     view,
     // 메인 리스트
@@ -228,7 +349,6 @@ export function useStep5(examId: number) {
     selectedStudentIdx,
     selectedStudent,
     navStudent,
-    openDetail,
     goToList,
     // 상세 — 문제
     selectedProblemIdx,

@@ -297,14 +297,18 @@ export default function Step5Page() {
   })
 
   const {
-    isOcrLoading,
+    isAllOcrRunning,
+    runAllOcr,
+    studentOcrStudentId,
+    isStudentOcrRunning,
+    handleStudentClick,
+    rerunStudentOcr,
     view,
     progress,
     students,
     selectedStudentIdx,
     selectedStudent,
     navStudent,
-    openDetail,
     goToList,
     selectedProblemIdx,
     setSelectedProblemIdx,
@@ -351,7 +355,7 @@ export default function Step5Page() {
             <p className="text-[14px] text-[#71757e] mt-[5px]">
               학생 이름을 눌러 문제 순서대로 OCR의 답안 인식을 검토 및 확정하세요
             </p>
-            {/* 전체 확정 진행바 */}
+            {/* 전체 확정 진행바 + OCR 실행 버튼 */}
             <div className="flex items-center gap-[12px] mt-[16px]">
               <span className="text-[12.5px] text-[#9aa0ab] font-semibold flex-none">전체 확정</span>
               <div className="flex-1 h-[8px] rounded-[5px] bg-[#eef0f3] overflow-hidden">
@@ -363,6 +367,18 @@ export default function Step5Page() {
               <span className="text-[12.5px] text-[#4b4f57] font-bold flex-none">
                 {confirmedCount} / {totalCount} 확정
               </span>
+              <button
+                type="button"
+                onClick={runAllOcr}
+                disabled={isAllOcrRunning}
+                className="flex items-center gap-[7px] h-[34px] px-[14px] bg-accent text-white text-[12.5px] font-bold rounded-[9px] shadow-[0_2px_8px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity flex-none"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                {isAllOcrRunning ? 'OCR 처리 중...' : '전체 답안 OCR 실행'}
+              </button>
             </div>
           </div>
 
@@ -372,7 +388,8 @@ export default function Step5Page() {
             <div className="flex items-center text-[12.5px] text-[#8a8f99] font-bold px-[16px] pb-[10px]">
               <div className="w-[32px] flex-none" />
               <div className="flex-1 pl-[14px]">학생</div>
-              <div className="w-[340px]">답안 검토 진행</div>
+              <div className="w-[148px]">OCR 여부</div>
+              <div className="w-[200px]">답안 검토 진행</div>
               <div className="w-[24px]" />
             </div>
 
@@ -383,17 +400,18 @@ export default function Step5Page() {
                 </div>
               ) : (
                 students.map((s, i) => {
-                  const barColor =
-                    s.percent === 100 ? '#138a5a' : s.percent === 0 ? '#d4d7dd' : '#4F46E5'
-                  const pctColor =
-                    s.percent === 100 ? '#138a5a' : s.percent === 0 ? '#aab0ba' : '#4b4f57'
+                  const isStudentOcrRunning = s.student_id === studentOcrStudentId
+                  const hasOcrResults = s.total_count > 0
+                  const barColor = s.percent === 100 ? '#138a5a' : s.percent === 0 ? '#d4d7dd' : '#4F46E5'
+                  const pctColor = s.percent === 100 ? '#138a5a' : s.percent === 0 ? '#aab0ba' : '#4b4f57'
 
                   return (
                     <button
                       key={s.student_id}
                       type="button"
-                      onClick={() => openDetail(i)}
-                      className="flex items-center px-[16px] py-[13px] border border-[#ebedf1] rounded-[13px] hover:bg-[#fafbfc] transition-colors text-left w-full"
+                      onClick={() => handleStudentClick(i)}
+                      disabled={isAllOcrRunning || (!!studentOcrStudentId && !isStudentOcrRunning)}
+                      className="flex items-center px-[16px] py-[13px] border border-[#ebedf1] rounded-[13px] hover:bg-[#fafbfc] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left w-full"
                     >
                       {/* 아바타 */}
                       <div className="w-[32px] flex-none">
@@ -406,20 +424,46 @@ export default function Step5Page() {
                         <span className="text-[15px] font-bold text-[#000]">{s.name}</span>
                         <span className="text-[12.5px] text-[#9aa0ab] font-mono">{s.student_no}</span>
                       </div>
-                      {/* 진행 바 */}
-                      <div className="w-[340px] flex-none flex items-center gap-[12px]">
-                        <div className="flex-1 h-[9px] rounded-[5px] bg-[#eef0f3] overflow-hidden">
-                          <div
-                            className="h-full rounded-[5px] transition-all"
-                            style={{ width: `${Math.max(s.percent, 2)}%`, background: barColor }}
-                          />
+                      {/* OCR 상태 + 검토 진행 */}
+                      <div className="w-[340px] flex-none flex items-center gap-[10px]">
+                        {/* 상태 배지 */}
+                        <div className="w-[68px] flex-none flex items-center">
+                          {isStudentOcrRunning ? (
+                            <span className="flex items-center gap-[5px] text-[11.5px] font-bold text-accent">
+                              <span className="w-[10px] h-[10px] rounded-full border-2 border-accent border-t-transparent animate-spin flex-none" />
+                              OCR 중
+                            </span>
+                          ) : !hasOcrResults ? (
+                            <span className="text-[11.5px] font-semibold text-[#b0b5be] bg-[#f2f3f5] px-[7px] py-[2px] rounded-[5px]">
+                              미실행
+                            </span>
+                          ) : (
+                            <span className="text-[11.5px] font-semibold text-[#138a5a] bg-[#eaf7f0] px-[7px] py-[2px] rounded-[5px]">
+                              완료
+                            </span>
+                          )}
                         </div>
-                        <span
-                          className="w-[42px] text-right text-[13px] font-bold"
-                          style={{ color: pctColor }}
-                        >
-                          {s.percent}%
-                        </span>
+                        {/* 검토 진행 바 */}
+                        {hasOcrResults ? (
+                          <>
+                            <div className="flex-1 h-[9px] rounded-[5px] bg-[#eef0f3] overflow-hidden">
+                              <div
+                                className="h-full rounded-[5px] transition-all"
+                                style={{ width: `${Math.max(s.percent, 2)}%`, background: barColor }}
+                              />
+                            </div>
+                            <span
+                              className="w-[42px] text-right text-[13px] font-bold"
+                              style={{ color: pctColor }}
+                            >
+                              {s.percent}%
+                            </span>
+                          </>
+                        ) : (
+                          <span className="flex-1 text-[12px] text-[#c2c6cd]">
+                            {isStudentOcrRunning ? '인식 중...' : '클릭하여 OCR 실행'}
+                          </span>
+                        )}
                       </div>
                       {/* 화살표 */}
                       <div className="w-[24px] flex-none flex justify-end">
@@ -446,8 +490,8 @@ export default function Step5Page() {
             <button
               type="button"
               onClick={handleNext}
-              disabled={isAdvancing}
-              className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isAdvancing || totalCount === 0 || confirmedCount < totalCount}
+              className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity disabled:bg-[#c1c5cd] disabled:shadow-none disabled:cursor-not-allowed"
             >
               다음: 채점 확정
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -509,8 +553,8 @@ export default function Step5Page() {
               </div>
             </div>
 
-            {/* 문제 stepper pills */}
-            <div className="flex gap-[8px] mt-[16px] pb-[14px] flex-wrap">
+            {/* 문제 stepper pills + OCR 재실행 */}
+            <div className="flex items-center gap-[8px] mt-[16px] pb-[14px] flex-wrap">
               {results.map((r, i) => (
                 <ProblemPill
                   key={r.ocr_result_id}
@@ -522,6 +566,28 @@ export default function Step5Page() {
               {results.length === 0 && (
                 <span className="text-[13px] text-[#9aa0ab]">인식 결과가 없습니다</span>
               )}
+              <div className="ml-auto flex-none">
+                <button
+                  type="button"
+                  onClick={rerunStudentOcr}
+                  disabled={isStudentOcrRunning || isAllOcrRunning}
+                  className="flex items-center gap-[6px] h-[34px] px-[13px] border border-[#e0e3e9] bg-white rounded-[10px] text-[13px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isStudentOcrRunning ? (
+                    <>
+                      <span className="w-[11px] h-[11px] rounded-full border-2 border-[#9aa0ab] border-t-transparent animate-spin flex-none" />
+                      OCR 중...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 4v5h5M20 20v-5h-5M4.93 14A8 8 0 1 0 6.34 6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      OCR 재실행
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -644,8 +710,8 @@ export default function Step5Page() {
         </main>
       )}
 
-      {/* ── OCR 로딩 오버레이 ───────────────────────────────────────────── */}
-      {isOcrLoading && (
+      {/* ── OCR 로딩 오버레이 (전체 실행 시) ──────────────────────────── */}
+      {isAllOcrRunning && (
         <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
           <div className="flex flex-col items-center gap-[18px] bg-white rounded-[20px] px-[52px] py-[46px] shadow-[0_16px_48px_rgba(20,24,40,.18)] text-center">
             <div className="w-[52px] h-[52px] rounded-full border-4 border-[#e2e4e9] border-t-accent animate-spin" />

@@ -31,4 +31,9 @@ export const ocrApi = {
     apiClient
       .post<ApiResponse<OcrResultResponse>>(`/ocr-results/${resultId}/confirm`)
       .then((r) => r.data),
+
+  runSheetOcr: (sheetId: number) =>
+    apiClient
+      .post<ApiResponse<JobStartedResponse>>(`/answer-sheets/${sheetId}/ocr`)
+      .then((r) => r.data),
 }
