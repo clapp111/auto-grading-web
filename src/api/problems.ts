@@ -24,6 +24,7 @@ export interface ProblemUpdateRequest {
   type?: ProblemType
   max_score?: number
   region?: Region
+  problem_text?: string | null
 }
 
 export interface ModelAnswerOcrRequest {
@@ -86,6 +87,11 @@ export const problemsApi = {
   delete: (problemId: number) =>
     apiClient
       .delete<ApiResponse<null>>(`/problems/${problemId}`)
+      .then((r) => r.data),
+
+  runProblemOcr: (problemId: number) =>
+    apiClient
+      .post<ApiResponse<JobStartedResponse>>(`/problems/${problemId}/ocr`)
       .then((r) => r.data),
 
   // 서브스텝 2/3 · 모범답안 영역 지정 · OCR ───────────────────────────

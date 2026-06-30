@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { usePresignedUpload } from '@/hooks/common/usePresignedUpload'
+import { useJobPolling } from '@/hooks/common/useJobPolling'
 import { problemsApi, type ProblemCreateRequest, type ProblemUpdateRequest } from '@/api/problems'
 
 export function useProblems(examId: number, initialSheetUrl?: string | null) {
   const qc = useQueryClient()
   const { upload, uploading: sheetUploading } = usePresignedUpload()
   const [sheetBlobUrl, setSheetBlobUrl] = useState<string | null>(null)
+  const [activeOcrJobId, setActiveOcrJobId] = useState<number | null>(null)
+  const [ocrProblemId, setOcrProblemId] = useState<number | null>(null)
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['problems', examId] })
 
@@ -43,6 +46,32 @@ export function useProblems(examId: number, initialSheetUrl?: string | null) {
     onError: () => toast.error('문제 삭제에 실패했습니다.'),
   })
 
+  const ocrMutation = useMutation({
+    mutationFn: (problemId: number) => problemsApi.runProblemOcr(problemId),
+    onSuccess: (res, problemId) => {
+      if (res.data) {
+        setActiveOcrJobId(res.data.job_id)
+        setOcrProblemId(problemId)
+      }
+    },
+    onError: () => toast.error('OCR 실행에 실패했습니다.'),
+  })
+
+  useJobPolling({
+    jobId: activeOcrJobId ? String(activeOcrJobId) : null,
+    onComplete: () => {
+      invalidate()
+      setActiveOcrJobId(null)
+      setOcrProblemId(null)
+      toast.success('문제 OCR이 완료되었습니다.')
+    },
+    onError: () => {
+      setActiveOcrJobId(null)
+      setOcrProblemId(null)
+      toast.error('OCR에 실패했습니다.')
+    },
+  })
+
   return {
     problems: data ?? [],
     isLoading,
@@ -53,5 +82,7 @@ export function useProblems(examId: number, initialSheetUrl?: string | null) {
     update: (problemId: number, body: ProblemUpdateRequest) =>
       updateMutation.mutate({ problemId, body }),
     remove: deleteMutation.mutate,
+    runOcr: ocrMutation.mutate,
+    ocrProblemId,
   }
 }

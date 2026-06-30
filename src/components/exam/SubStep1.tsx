@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Trash2, GripVertical, ChevronDown, Upload } from 'lucide-react'
+import { Trash2, GripVertical, ChevronDown, Upload, ScanText } from 'lucide-react'
 import { toast } from 'sonner'
 import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
 import { useProblems } from '../../hooks/exam/useProblems'
@@ -77,19 +77,31 @@ function ProblemCard({
   onScoreChange,
   onLabelChange,
   onDelete,
+  isExpanded,
+  onToggle,
+  ocrRunning,
+  onRunOcr,
+  onTextSave,
 }: {
   problem: ProblemResponse
   onTypeChange: (t: ProblemType) => void
   onScoreChange: (score: number) => void
   onLabelChange: (label: string) => void
   onDelete: () => void
+  isExpanded: boolean
+  onToggle: () => void
+  ocrRunning: boolean
+  onRunOcr: () => void
+  onTextSave: (text: string) => void
 }) {
   const [scoreStr, setScoreStr] = useState(String(problem.max_score))
   const [labelStr, setLabelStr] = useState(problem.label)
   const [editingLabel, setEditingLabel] = useState(false)
+  const [localText, setLocalText] = useState(problem.problem_text ?? '')
 
   useEffect(() => { setScoreStr(String(problem.max_score)) }, [problem.max_score])
   useEffect(() => { setLabelStr(problem.label) }, [problem.label])
+  useEffect(() => { setLocalText(problem.problem_text ?? '') }, [problem.problem_text])
 
   const handleScoreBlur = () => {
     const n = parseInt(scoreStr, 10)
@@ -111,55 +123,139 @@ function ProblemCard({
   }
 
   return (
-    <div className="border border-[#ebedf1] rounded-[11px] p-[13px_14px] flex items-center gap-[11px]">
-      <GripVertical size={15} className="text-[#c2c6cd] flex-none cursor-grab" />
-      <span
-        className="w-[10px] h-[10px] rounded-full flex-none"
-        style={{ background: TYPE_COLORS[problem.type] }}
-      />
-      <TypeDropdown value={problem.type} onChange={onTypeChange} />
-      {editingLabel ? (
-        <input
-          autoFocus
-          value={labelStr}
-          onChange={e => setLabelStr(e.target.value)}
-          onBlur={handleLabelBlur}
-          onKeyDown={e => {
-            if (e.key === 'Enter') handleLabelBlur()
-            if (e.key === 'Escape') { setLabelStr(problem.label); setEditingLabel(false) }
-          }}
-          className="text-[15px] font-bold text-[#15171d] outline-none border-b border-accent bg-transparent w-[60px]"
-        />
-      ) : (
-        <span
-          className="text-[15px] font-bold text-[#15171d] cursor-text hover:text-accent transition-colors"
-          onClick={() => setEditingLabel(true)}
-          title="클릭해서 라벨 수정"
-        >
-          {problem.label}
-        </span>
+    <div
+      className={cn(
+        'border rounded-[11px] transition-colors',
+        isExpanded ? 'border-accent/40 bg-accent/[.02]' : 'border-[#ebedf1]',
       )}
-
-      <div className="ml-auto flex items-center gap-[6px] flex-none">
-        <div className="flex items-center border border-[#e2e4e9] rounded-[8px] h-[30px] px-[10px] bg-white">
-          <input
-            type="text"
-            value={scoreStr}
-            onChange={e => setScoreStr(e.target.value)}
-            onBlur={handleScoreBlur}
-            onKeyDown={e => e.key === 'Enter' && handleScoreBlur()}
-            className="w-[28px] text-right text-[15px] font-bold text-[#15171d] font-mono outline-none bg-transparent"
-          />
-          <span className="text-[12px] text-[#9aa0ab] ml-[3px]">점</span>
+    >
+      {/* 카드 헤더 — 클릭 시 확장/축소 */}
+      <div
+        className="p-[13px_14px] flex items-center gap-[11px] cursor-pointer select-none"
+        onClick={onToggle}
+      >
+        <GripVertical
+          size={15}
+          className="text-[#c2c6cd] flex-none cursor-grab"
+          onClick={e => e.stopPropagation()}
+        />
+        <span
+          className="w-[10px] h-[10px] rounded-full flex-none"
+          style={{ background: TYPE_COLORS[problem.type] }}
+        />
+        <div onClick={e => e.stopPropagation()}>
+          <TypeDropdown value={problem.type} onChange={onTypeChange} />
         </div>
-        <button
-          type="button"
-          onClick={onDelete}
-          className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
+        {editingLabel ? (
+          <input
+            autoFocus
+            value={labelStr}
+            onChange={e => setLabelStr(e.target.value)}
+            onBlur={handleLabelBlur}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleLabelBlur()
+              if (e.key === 'Escape') { setLabelStr(problem.label); setEditingLabel(false) }
+            }}
+            onClick={e => e.stopPropagation()}
+            className="text-[15px] font-bold text-[#15171d] outline-none border-b border-accent bg-transparent w-[60px]"
+          />
+        ) : (
+          <span
+            className="text-[15px] font-bold text-[#15171d] hover:text-accent transition-colors"
+            onClick={e => { e.stopPropagation(); setEditingLabel(true) }}
+            title="클릭해서 라벨 수정"
+          >
+            {problem.label}
+          </span>
+        )}
+
+        <div className="ml-auto flex items-center gap-[6px] flex-none" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center border border-[#e2e4e9] rounded-[8px] h-[30px] px-[10px] bg-white">
+            <input
+              type="text"
+              value={scoreStr}
+              onChange={e => setScoreStr(e.target.value)}
+              onBlur={handleScoreBlur}
+              onKeyDown={e => e.key === 'Enter' && handleScoreBlur()}
+              className="w-[28px] text-right text-[15px] font-bold text-[#15171d] font-mono outline-none bg-transparent"
+            />
+            <span className="text-[12px] text-[#9aa0ab] ml-[3px]">점</span>
+          </div>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
+
+      {/* 확장 패널 — 문제 텍스트 OCR */}
+      {isExpanded && (
+        <div className="px-[14px] pb-[14px] border-t border-[#f0f1f4]">
+          <div className="flex items-center justify-between mt-[12px] mb-[8px]">
+            <span className="text-[12px] font-semibold text-[#71757e]">문제 텍스트</span>
+            <button
+              type="button"
+              onClick={onRunOcr}
+              disabled={!problem.region || ocrRunning}
+              className={cn(
+                'flex items-center gap-[5px] h-[26px] px-[10px] rounded-[7px] text-[12px] font-semibold transition-colors',
+                !problem.region
+                  ? 'text-[#c2c6cd] bg-[#f4f5f7] cursor-not-allowed'
+                  : ocrRunning
+                    ? 'text-accent bg-accent/10 cursor-not-allowed'
+                    : 'text-accent bg-accent/10 hover:bg-accent/20',
+              )}
+            >
+              <ScanText size={12} />
+              {ocrRunning ? 'OCR 처리 중...' : 'OCR 실행'}
+            </button>
+          </div>
+          <textarea
+            value={localText}
+            onChange={e => setLocalText(e.target.value)}
+            onBlur={() => {
+              const trimmed = localText.trimEnd()
+              if (trimmed !== (problem.problem_text ?? '')) {
+                onTextSave(trimmed)
+              }
+            }}
+            placeholder={
+              problem.region
+                ? 'OCR을 실행하거나 직접 입력하세요'
+                : '먼저 PDF에서 영역을 지정하세요'
+            }
+            disabled={!problem.region}
+            rows={10}
+            onKeyDown={e => {
+              if (e.key === 'Tab') {
+                e.preventDefault()
+                const el = e.currentTarget
+                const start = el.selectionStart
+                const end = el.selectionEnd
+                const next = localText.slice(0, start) + '    ' + localText.slice(end)
+                setLocalText(next)
+                requestAnimationFrame(() => {
+                  el.selectionStart = start + 4
+                  el.selectionEnd = start + 4
+                })
+              }
+            }}
+            className={cn(
+              'w-full resize-none rounded-[8px] border border-[#e2e4e9] px-[11px] py-[9px] text-[13px] leading-[1.7] text-[#3a3e46] outline-none transition-colors bg-white',
+              'focus:border-accent/50 placeholder:text-[#c2c6cd]',
+              !problem.region && 'bg-[#f7f8fa] cursor-not-allowed text-[#c2c6cd]',
+            )}
+          />
+          {!problem.region && (
+            <p className="mt-[5px] text-[11.5px] text-[#c2c6cd]">
+              왼쪽 PDF에서 영역을 드래그하면 활성화됩니다
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -175,7 +271,9 @@ interface SubStep1Props {
 
 export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Props) {
   const [currentPage, setCurrentPage] = useState(1)
-  const { problems, sheetUrl, sheetUploading, uploadSheet, create, update, remove } =
+  const [selectedProblemId, setSelectedProblemId] = useState<number | null>(null)
+
+  const { problems, sheetUrl, sheetUploading, uploadSheet, create, update, remove, runOcr, ocrProblemId } =
     useProblems(examId, initialSheetUrl)
 
   const onDrop = useCallback(
@@ -319,6 +417,13 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
                   onScoreChange={max_score => update(p.problem_id, { max_score })}
                   onLabelChange={label => update(p.problem_id, { label })}
                   onDelete={() => remove(p.problem_id)}
+                  isExpanded={selectedProblemId === p.problem_id}
+                  onToggle={() =>
+                    setSelectedProblemId(id => (id === p.problem_id ? null : p.problem_id))
+                  }
+                  ocrRunning={ocrProblemId === p.problem_id}
+                  onRunOcr={() => runOcr(p.problem_id)}
+                  onTextSave={text => update(p.problem_id, { problem_text: text })}
                 />
               ))
             )}
