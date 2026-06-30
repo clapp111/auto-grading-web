@@ -25,6 +25,7 @@ export interface ProblemUpdateRequest {
   max_score?: number
   region?: Region
   problem_text?: string | null
+  language?: ProgrammingLanguage | null
 }
 
 export interface ModelAnswerOcrRequest {

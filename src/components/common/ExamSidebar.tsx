@@ -3,7 +3,7 @@ import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
-  { step: 1, label: '문제지 세팅',    subLabels: ['영역 + 유형', '모범답안 OCR', '정답 입력'] },
+  { step: 1, label: '문제지 세팅',    subLabels: ['문제 OCR', '모범답안 OCR', '정답 입력'] },
   { step: 2, label: '루브릭 설정',    subLabels: [] },
   { step: 3, label: '학생 정보 입력', subLabels: [] },
   { step: 4, label: '답안 영역 지정', subLabels: [] },

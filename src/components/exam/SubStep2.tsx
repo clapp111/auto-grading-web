@@ -32,7 +32,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
   const [selectedLanguage, setSelectedLanguage] = useState<ProgrammingLanguage>('CPP')
   const [localText, setLocalText] = useState('')
 
-  const { problems } = useProblems(examId)
+  const { problems, update: updateProblem } = useProblems(examId)
   const {
     modelAnswers,
     modelAnswerUrl,
@@ -52,6 +52,13 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
       setActiveTab(ocrProblems[0].problem_id)
     }
   }, [ocrProblems, activeTab])
+
+  // activeTab 변경 시 저장된 언어로 selectedLanguage 동기화
+  useEffect(() => {
+    const lang = ocrProblems.find(p => p.problem_id === activeTab)?.language
+    if (lang) setSelectedLanguage(lang)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
 
   // 탭 전환 or OCR 완료 시 로컬 텍스트 동기화 (tabAnswer는 아래 선언)
   const serverText = modelAnswers.find(a => a.problem_id === activeTab)?.model_answer_text ?? ''
@@ -157,32 +164,8 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
               사각형
             </button>
             
-            {/* 매핑할 문제 선택 + 언어 선택 */}
+            {/* 매핑할 문제 선택 */}
             <div className="ml-auto flex items-center gap-[8px]">
-              {/* 언어 선택 — CODING 문제 선택 시에만 표시 */}
-              {isCoding && (
-                <>
-                  <span className="text-[12.5px] text-[#8a8f99] font-medium whitespace-nowrap">
-                    언어
-                  </span>
-                  <div className="relative">
-                    <select
-                      value={selectedLanguage}
-                      onChange={e => setSelectedLanguage(e.target.value as ProgrammingLanguage)}
-                      className="appearance-none h-[34px] pl-[10px] pr-[28px] border border-[#f59e0b] bg-[#f59e0b0f] rounded-[9px] text-[13px] text-[#d97706] font-semibold cursor-pointer outline-none"
-                    >
-                      {LANGUAGES.map(lang => (
-                        <option key={lang} value={lang}>{LANG_LABELS[lang]}</option>
-                      ))}
-                    </select>
-                    <ChevronDown
-                      size={13}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[#f59e0b] pointer-events-none"
-                    />
-                  </div>
-                </>
-              )}
-
               <span className="text-[12.5px] text-[#8a8f99] font-medium whitespace-nowrap">
                 매핑할 문제
               </span>
@@ -296,10 +279,23 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
               <span className="text-[12.5px] text-[#8a8f99] ml-[6px] font-mono">
                 {tabFileName}
               </span>
-              {tabProblem?.type === 'CODING' && tabLang && (
-                <span className="ml-auto text-[11px] font-bold px-[8px] py-[2px] rounded-[6px] bg-[#f59e0b20] text-[#d97706]">
-                  {LANG_LABELS[tabLang]}
-                </span>
+              {tabProblem?.type === 'CODING' && (
+                <div className="ml-auto relative">
+                  <select
+                    value={tabLang ?? selectedLanguage}
+                    onChange={e => {
+                      const lang = e.target.value as ProgrammingLanguage
+                      setSelectedLanguage(lang)
+                      updateProblem(tabProblem.problem_id, { language: lang })
+                    }}
+                    className="appearance-none text-[11px] font-bold pl-[8px] pr-[18px] py-[2px] rounded-[6px] bg-[#f59e0b20] text-[#d97706] border-none outline-none cursor-pointer"
+                  >
+                    {LANGUAGES.map(lang => (
+                      <option key={lang} value={lang}>{LANG_LABELS[lang]}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={9} className="absolute right-[3px] top-1/2 -translate-y-1/2 text-[#d97706] pointer-events-none" />
+                </div>
               )}
             </div>
 
