@@ -24,7 +24,7 @@ export function useRubric(problemId: number) {
     onError: () => toast.error('루브릭 추천 요청에 실패했습니다.'),
   })
 
-  useJobPolling({
+  const { job: suggestJob } = useJobPolling({
     jobId: activeJobId ? String(activeJobId) : null,
     onComplete: () => {
       invalidate()
@@ -69,6 +69,7 @@ export function useRubric(problemId: number) {
     rubric: data ?? [],
     isLoading,
     suggesting: !!activeJobId || suggestMutation.isPending,
+    suggestJobProgress: suggestJob?.progress_json ?? null,
     suggest: suggestMutation.mutate,
     addCriterion,
     updateCriterion: (rubricId: number, body: RubricUpdateRequest) =>

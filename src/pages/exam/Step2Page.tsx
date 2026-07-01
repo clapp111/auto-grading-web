@@ -100,8 +100,9 @@ function RubricPanel({
   problem: ProblemResponse
   modelAnswer: ModelAnswerResponse | null
 }) {
-  const { rubric, suggesting, suggest, addCriterion, updateCriterion, deleteCriterion } =
+  const { rubric, suggesting, suggestJobProgress, suggest, addCriterion, updateCriterion, deleteCriterion } =
     useRubric(problem.problem_id)
+  const [showSuggestConfirm, setShowSuggestConfirm] = useState(false)
 
   const totalAllocated = rubric.reduce((sum, r) => sum + r.allocated_score, 0)
 
@@ -172,7 +173,7 @@ function RubricPanel({
             {/* 다시 추천 버튼 */}
             <button
               type="button"
-              onClick={() => suggest()}
+              onClick={() => setShowSuggestConfirm(true)}
               disabled={suggesting}
               className="flex items-center gap-[5px] h-[32px] px-[12px] border border-[#e2e4e9] bg-white rounded-[9px] text-[12.5px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] disabled:opacity-50 transition-colors"
             >
@@ -227,6 +228,71 @@ function RubricPanel({
           </button>
         </div>
       </div>
+
+      {/* 루브릭 추천 진행률 오버레이 */}
+      {suggesting && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-[18px] bg-white rounded-[20px] px-[52px] py-[46px] shadow-[0_16px_48px_rgba(20,24,40,.18)] text-center">
+            <div className="w-[52px] h-[52px] rounded-full border-4 border-[#e2e4e9] border-t-accent animate-spin" />
+            <div>
+              <p className="text-[17px] font-bold text-[#15171d] mb-[6px]">
+                AI가 루브릭을 생성하고 있습니다
+              </p>
+              {suggestJobProgress && suggestJobProgress.total > 0 ? (
+                <>
+                  <div className="w-[200px] h-[6px] rounded-full bg-[#eef0f3] overflow-hidden mx-auto mt-[10px] mb-[8px]">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-500"
+                      style={{ width: `${suggestJobProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-[13.5px] text-[#71757e]">
+                    {suggestJobProgress.current} / {suggestJobProgress.total} 완료
+                  </p>
+                </>
+              ) : (
+                <p className="text-[13.5px] text-[#71757e]">잠시 기다려주세요...</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 다시 추천 확인 모달 */}
+      {showSuggestConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowSuggestConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-[16px] shadow-xl w-[360px] p-[28px] flex flex-col gap-[20px]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex flex-col gap-[8px]">
+              <p className="text-[16px] font-bold text-[#15171d]">루브릭 다시 추천</p>
+              <p className="text-[13.5px] text-[#71757e] leading-[1.65]">
+                기존의 루브릭과 채점 기록이 삭제됩니다.<br />계속하시겠습니까?
+              </p>
+            </div>
+            <div className="flex gap-[8px] justify-end">
+              <button
+                type="button"
+                onClick={() => setShowSuggestConfirm(false)}
+                className="h-[40px] px-[16px] border border-[#e0e3e9] bg-white rounded-[10px] text-[13.5px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] transition-colors"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowSuggestConfirm(false); suggest() }}
+                className="h-[40px] px-[16px] bg-[#f0625c] text-white rounded-[10px] text-[13.5px] font-semibold hover:opacity-90 transition-opacity"
+              >
+                삭제 후 추천
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
