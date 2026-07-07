@@ -254,7 +254,7 @@ export function PdfCanvas({
       >
         <div
           ref={containerRef}
-          className="relative rounded-[4px] overflow-hidden bg-white shadow-[0_6px_20px_rgba(20,24,40,.16)]"
+          className="relative rounded-[4px] overflow-hidden bg-white shadow-[0_6px_20px_rgba(20,24,40,.16)] shrink-0"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
