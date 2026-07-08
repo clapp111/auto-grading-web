@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/api/client'
 import type { ApiResponse, JobResponse } from '@/types/dto'
@@ -13,6 +14,11 @@ interface UseJobPollingOptions {
 }
 
 export function useJobPolling({ jobId, intervalMs = 2000, onComplete, onError }: UseJobPollingOptions) {
+  const onCompleteRef = useRef(onComplete)
+  const onErrorRef = useRef(onError)
+  onCompleteRef.current = onComplete
+  onErrorRef.current = onError
+
   const query = useQuery({
     queryKey: ['job', jobId],
     queryFn: () =>
@@ -30,8 +36,11 @@ export function useJobPolling({ jobId, intervalMs = 2000, onComplete, onError }:
   const isCompleted = job?.status === 'DONE'
   const isFailed = job?.status === 'FAILED'
 
-  if (isCompleted && job) onComplete?.(job)
-  if (isFailed && job) onError?.(job)
+  useEffect(() => {
+    if (!job) return
+    if (job.status === 'DONE') onCompleteRef.current?.(job)
+    if (job.status === 'FAILED') onErrorRef.current?.(job)
+  }, [job?.job_id, job?.status])
 
   return { job, isRunning, isCompleted, isFailed, ...query }
 }

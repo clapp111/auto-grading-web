@@ -642,7 +642,7 @@ function LlmGradeDetailView({
               학생 답안{' '}
               <span className="text-[13px] font-medium text-[#9aa0ab]">{problem.label} 서술형</span>
             </div>
-            <div className="flex-1 mx-[24px] mb-[18px] border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] p-[15px_16px] text-[14px] text-[#3a3e36] leading-[1.85] overflow-y-auto min-h-0 font-sans">
+            <div className="flex-1 mx-[24px] mb-[18px] border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] p-[15px_16px] text-[14px] text-[#3a3e36] leading-[1.85] overflow-y-auto min-h-0 font-sans whitespace-pre-wrap">
               {selectedGrade.ocr_text ?? (
                 <span className="text-[#c2c6cd] italic">OCR 인식 텍스트가 없습니다</span>
               )}
@@ -683,7 +683,7 @@ function LlmGradeDetailView({
               {selectedGrade.comment && (
                 <div className="mt-[4px]">
                   <div className="text-[12.5px] text-[#9aa0ab] font-semibold mb-[7px]">LLM 코멘트</div>
-                  <div className="border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] px-[15px] py-[13px] text-[13.5px] text-[#3a3e36] leading-[1.7]">
+                  <div className="border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] px-[15px] py-[13px] text-[13.5px] text-[#3a3e36] leading-[1.7] whitespace-pre-wrap">
                     {selectedGrade.comment}
                   </div>
                 </div>
