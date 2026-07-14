@@ -9,6 +9,10 @@ import type {
 } from '@/types/dto'
 import { apiClient } from './client'
 
+export interface GradeCreateRequest {
+  score: number
+}
+
 export interface GradeUpdateRequest {
   score?: number
   comment?: string
@@ -43,6 +47,16 @@ export const gradingApi = {
   confirmGrade: (gradeId: number) =>
     apiClient
       .post<ApiResponse<GradeResponse>>(`/grades/${gradeId}/confirm`)
+      .then((r) => r.data),
+
+  deleteGrades: (problemId: number) =>
+    apiClient
+      .delete<ApiResponse<GradeResponse>>(`/problems/${problemId}/grades`)
+      .then((r) => r.data),
+
+  createGrade: (problemId: number, studentId: number, body: GradeCreateRequest) =>
+    apiClient
+      .post<ApiResponse<GradeResponse>>(`/problems/${problemId}/students/${studentId}/grades`, body)
       .then((r) => r.data),
 
   confirmAllGrades: (problemId: number) =>

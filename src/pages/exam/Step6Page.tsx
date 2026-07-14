@@ -4,12 +4,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
+import { PdfCanvas, type RegionOverlay } from '@/components/exam/PdfCanvas'
 import { useStep6, type ProblemRow } from '@/hooks/exam/useStep6'
 import { examsApi } from '@/api/exams'
 import { type GradeUpdateRequest } from '@/api/grading'
 import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/types/constants'
 import { cn } from '@/lib/utils'
-import type { GradeResponse, ModelAnswerResponse } from '@/types/dto'
+import type { GradeResponse, ModelAnswerResponse, AnswerRegionResponse, AnswerSheetResponse } from '@/types/dto'
 import type { ProblemType } from '@/types/enums'
 
 // ── 채점 방식 레이블 ─────────────────────────────────────────────────────
@@ -172,34 +173,104 @@ function AutoGradeDetailView({
   grades,
   modelAnswer,
   isGradesLoading,
-  isGrading,
-  isConfirmingAll,
-  onRunGrading,
-  onConfirmAll,
+  sheets,
+  selectedSheetIdx,
+  selectedSheet,
+  isLastSheet,
+  currentGrade,
+  isCreatingGrade,
+  isUpdatingGrade,
+  isDeletingGrades,
+  pdfUrl,
+  sheetRegions,
+  onCreateGrade,
+  onUpdateGrade,
+  onDeleteGrades,
+  onNavSheet,
   onBack,
 }: {
   problem: ProblemRow
   grades: GradeResponse[]
   modelAnswer: ModelAnswerResponse | null
   isGradesLoading: boolean
-  isGrading: boolean
-  isConfirmingAll: boolean
-  onRunGrading: () => void
-  onConfirmAll: () => void
+  sheets: AnswerSheetResponse[]
+  selectedSheetIdx: number
+  selectedSheet: AnswerSheetResponse | null
+  isLastSheet: boolean
+  currentGrade: GradeResponse | null
+  isCreatingGrade: boolean
+  isUpdatingGrade: boolean
+  isDeletingGrades: boolean
+  pdfUrl: string | null
+  sheetRegions: AnswerRegionResponse[]
+  onCreateGrade: (studentId: number, score: number) => void
+  onUpdateGrade: (gradeId: number, score: number) => void
+  onDeleteGrades: () => void
+  onNavSheet: (delta: number) => void
   onBack: () => void
 }) {
-  const confirmed = grades.filter((g) => g.status === 'CONFIRMED').length
-  const correctCount = grades.filter((g) => g.score === g.max_score).length
-  const wrongCount = grades.filter((g) => g.score < g.max_score).length
-  const allConfirmed = grades.length > 0 && confirmed === grades.length
+  const [currentPage, setCurrentPage] = useState(1)
+  // null = 미선택, true = 정답, false = 오답
+  const [localCorrect, setLocalCorrect] = useState<boolean | null>(null)
+  const [editMode, setEditMode] = useState(false)
 
-  const hasGrades = grades.length > 0
+  const confirmedCount = grades.filter((g) => g.status === 'CONFIRMED').length
+  const totalStudentCount = sheets.length
+  const pct = totalStudentCount > 0 ? Math.round((confirmedCount / totalStudentCount) * 100) : 0
+  const isCurrentConfirmed = currentGrade?.status === 'CONFIRMED'
+  const isProcessing = isCreatingGrade || isUpdatingGrade
+
+  // 학생(답안지) 전환 시 로컬 선택·수정 모드 초기화
+  useEffect(() => {
+    setEditMode(false)
+    if (!currentGrade) { setLocalCorrect(null); return }
+    setLocalCorrect(
+      currentGrade.status === 'CONFIRMED' ? currentGrade.score === problem.max_score : null
+    )
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSheet?.answer_sheet_id])
+
+  // 모범답안 텍스트
+  const correctAnswerText =
+    problem.type === 'MULTIPLE_CHOICE'
+      ? modelAnswer?.correct_choice != null ? `${modelAnswer.correct_choice}번` : null
+      : modelAnswer?.accepted_answers?.join(' / ') ?? null
+
+  // 해당 문제의 답안 영역
+  const problemRegion = sheetRegions.find((r) => r.problem_id === problem.problem_id) ?? null
+  const regionOverlay: RegionOverlay[] = problemRegion?.bbox_region
+    ? [{ region: problemRegion.bbox_region, label: problem.label, color: TYPE_COLORS[problem.type], shape: problemRegion.shape, polygon_points: problemRegion.polygon_points ?? undefined }]
+    : []
+
+  useEffect(() => {
+    if (problemRegion?.bbox_region?.page) setCurrentPage(problemRegion.bbox_region.page)
+  }, [problemRegion?.answer_region_id])
+
+  const handleSelect = (correct: boolean) => {
+    if (isCurrentConfirmed && !editMode) return
+    setLocalCorrect(correct)
+  }
+
+  const handleConfirm = () => {
+    if (isCurrentConfirmed && !editMode) {
+      onNavSheet(1)
+      return
+    }
+    if (localCorrect === null) return
+    const score = localCorrect ? problem.max_score : 0
+    if (!currentGrade) {
+      if (selectedSheet?.student_id != null) onCreateGrade(selectedSheet.student_id, score)
+    } else {
+      onUpdateGrade(currentGrade.grade_id, score)
+      setEditMode(false)
+    }
+  }
 
   return (
     <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Header */}
-      <div className="px-[30px] py-[22px] pb-[18px] border-b border-[#f0f1f4] flex-none">
-        <div className="flex items-start justify-between">
+      <div className="px-[30px] py-[20px] pb-0 border-b border-[#f0f1f4] flex-none">
+        <div className="flex items-start justify-between mb-[14px]">
           <div>
             <div className="flex items-center gap-[10px]">
               <button
@@ -217,152 +288,215 @@ function AutoGradeDetailView({
               </h2>
             </div>
             <p className="text-[14px] text-[#71757e] mt-[5px]">
-              객관식·단답형은 등록 정답과 자동 매칭됩니다 · 검토 후 일괄 확정
+              답안지를 확인하고 정답 여부를 직접 선택해 확정하세요
             </p>
           </div>
 
-          {hasGrades && (
-            <div className="flex items-center gap-[8px] flex-none">
+          {sheets.length > 0 && (
+            <div className="flex items-center gap-[9px]">
               <button
                 type="button"
-                onClick={onRunGrading}
-                disabled={isGrading}
-                className="flex items-center gap-[5px] h-[36px] px-[13px] border border-[#e0e3e9] bg-white rounded-[10px] text-[13px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] disabled:opacity-50 transition-colors"
+                disabled={isDeletingGrades || grades.length === 0}
+                onClick={onDeleteGrades}
+                className="flex items-center gap-[5px] h-[34px] px-[12px] border border-[#e2e4e9] bg-white rounded-[9px] text-[12.5px] text-[#9aa0ab] font-semibold hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[#fdf5f5] disabled:opacity-30 transition-colors mr-[3px]"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 4v5h5M20 20v-5h-5M4.93 14A8 8 0 1 0 6.34 6.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                재채점
+                채점 초기화
               </button>
-              <span className="flex items-center gap-[7px] h-[36px] px-[14px] bg-[#eaf7f0] rounded-[10px] text-[13px] text-[#138a5a] font-bold">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <button
+                type="button"
+                disabled={selectedSheetIdx === 0}
+                onClick={() => onNavSheet(-1)}
+                className="w-[34px] h-[34px] border border-[#e2e4e9] bg-white rounded-[9px] flex items-center justify-center text-[#5f636b] hover:bg-[#f7f8fa] disabled:opacity-30 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                자동 채점 {grades.length} / {problem.total_count}
+              </button>
+              <span className="w-[140px] truncate text-[13.5px] font-bold text-[#15171d]">
+                {selectedSheet?.student_name ?? '—'}
+                <span className="text-[#9aa0ab] font-normal text-[13px]">
+                  {' '}· {selectedSheet?.student_no}
+                </span>
               </span>
+              <button
+                type="button"
+                disabled={isLastSheet}
+                onClick={() => onNavSheet(1)}
+                className="w-[34px] h-[34px] border border-[#e2e4e9] bg-white rounded-[9px] flex items-center justify-center text-[#5f636b] hover:bg-[#f7f8fa] disabled:opacity-30 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
           )}
         </div>
+
+        {sheets.length > 0 && (
+          <div className="flex items-center gap-[12px] pb-[16px]">
+            <span className="text-[12.5px] text-[#9aa0ab] font-semibold flex-none">전체 진행</span>
+            <div className="flex-1 h-[8px] rounded-[5px] bg-[#eef0f3] overflow-hidden">
+              <div
+                className="h-full rounded-[5px] bg-accent transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[12.5px] text-[#4b4f57] font-bold flex-none">
+              {confirmedCount} / {totalStudentCount} 학생
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Body */}
-      {isGrading ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-[18px]">
-          <div className="w-[48px] h-[48px] rounded-full border-4 border-[#e2e4e9] border-t-accent animate-spin" />
-          <p className="text-[14px] text-[#71757e]">자동 채점 중입니다...</p>
-        </div>
-      ) : isGradesLoading ? (
+      {isGradesLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="w-[32px] h-[32px] rounded-full border-2 border-[#e2e4e9] border-t-accent animate-spin" />
         </div>
-      ) : !hasGrades ? (
-        /* 채점 시작 전 */
-        <div className="flex-1 flex flex-col items-center justify-center gap-[16px]">
-          <div className="w-[52px] h-[52px] rounded-[14px] bg-accent/10 flex items-center justify-center">
-            <Sparkles size={24} className="text-accent" />
-          </div>
-          <p className="text-[15px] font-bold text-[#15171d]">채점을 시작하세요</p>
-          <p className="text-[13.5px] text-[#71757e] text-center">
-            등록된 정답과 학생 답안을 자동으로 매칭합니다
-          </p>
-          <button
-            type="button"
-            onClick={onRunGrading}
-            className="flex items-center gap-[6px] h-[44px] px-[22px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 transition-opacity mt-[4px]"
-          >
-            <Sparkles size={16} />
-            자동 채점 실행
-          </button>
+      ) : sheets.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-[12px]">
+          <p className="text-[15px] font-bold text-[#15171d]">학생 답안지가 없습니다</p>
+          <p className="text-[13.5px] text-[#71757e]">3단계에서 답안지를 먼저 업로드해주세요</p>
         </div>
-      ) : (
-        <>
-          {/* 요약 카드 */}
-          <div className="flex gap-[12px] px-[30px] pt-[18px] pb-[6px] flex-none">
-            <div className="flex-1 border border-[#ebedf1] rounded-[12px] px-[16px] py-[13px]">
-              <div className="text-[12.5px] text-[#9aa0ab] font-semibold">정답</div>
-              <div className="text-[22px] font-extrabold text-[#138a5a] mt-[2px]">{correctCount}</div>
-            </div>
-            <div className="flex-1 border border-[#ebedf1] rounded-[12px] px-[16px] py-[13px]">
-              <div className="text-[12.5px] text-[#9aa0ab] font-semibold">오답</div>
-              <div className="text-[22px] font-extrabold text-[#c0392b] mt-[2px]">{wrongCount}</div>
-            </div>
+      ) : selectedSheet ? (
+        <div className="flex-1 flex min-h-0">
+          {/* Left: 답안지 PDF */}
+          <div className="flex-1 border-r border-[#f0f1f4] bg-[#eceef2] flex flex-col min-w-0 min-h-0 p-4">
+            {pdfUrl ? (
+              <PdfCanvas
+                url={pdfUrl}
+                pageWidth={360}
+                regions={regionOverlay}
+                drawMode={null}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                initialZoom={2.5}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-[13px] text-[#9aa0ab]">
+                답안지를 불러오는 중...
+              </div>
+            )}
           </div>
 
-          {/* 테이블 */}
-          <div className="flex-1 mx-[30px] mb-[0px] border border-[#ebedf1] rounded-[13px] overflow-hidden flex flex-col min-h-0">
-            <div className="flex items-center bg-[#fafbfc] border-b border-[#eef0f3] text-[12.5px] text-[#8a8f99] font-bold flex-none">
-              <div className="w-[200px] px-[16px] py-[12px]">학생</div>
-              <div className="flex-1 px-[16px] py-[12px]">학생 답안</div>
-              <div className="flex-1 px-[16px] py-[12px]">정답</div>
-              <div className="w-[120px] px-[16px] py-[12px]">결과</div>
-              <div className="w-[80px] px-[16px] py-[12px]">점수</div>
+          {/* Right: 채점 패널 */}
+          <div className="flex-[1.05] flex flex-col min-w-0 min-h-0">
+            {/* 패널 헤더 */}
+            <div className="px-[24px] py-[18px] pb-[14px] border-b border-[#f0f1f4] flex items-center justify-between flex-none">
+              <span className="text-[14.5px] font-bold text-[#15171d]">채점</span>
+              <div className="text-[13px] text-[#9aa0ab] font-semibold">
+                점수{' '}
+                <span className="text-[18px] text-[#15171d] font-extrabold">
+                  {localCorrect === null ? '—' : localCorrect ? problem.max_score : 0}
+                </span>
+                {' '}/ {problem.max_score}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              {grades.map((g) => {
-                const isCorrect = g.score === g.max_score
-                const answerText = g.marked_choice != null ? `${g.marked_choice}번` : (g.ocr_text ?? '—')
-                const modelText =
-                  problem.type === 'MULTIPLE_CHOICE'
-                    ? modelAnswer?.correct_choice != null
-                      ? `${modelAnswer.correct_choice}번`
-                      : '—'
-                    : modelAnswer?.accepted_answers?.join(' / ') ?? '—'
 
-                return (
-                  <div
-                    key={g.grade_id}
-                    className="flex items-center border-b border-[#f2f3f6] last:border-0"
+            {/* 패널 본문 */}
+            <div className="flex-1 px-[24px] py-[20px] flex flex-col gap-[16px] overflow-y-auto min-h-0">
+              {/* 모범답안 */}
+              {correctAnswerText && (
+                <div className="border border-[#ebedf1] rounded-[11px] px-[16px] py-[13px]">
+                  <div className="text-[12px] text-[#9aa0ab] font-semibold mb-[5px]">모범답안</div>
+                  <div className="text-[15px] font-bold text-[#15171d]">{correctAnswerText}</div>
+                </div>
+              )}
+
+              {/* 정답 / 오답 선택 */}
+              <div className="flex flex-col gap-[3px]">
+                <div className="text-[12px] text-[#9aa0ab] font-semibold mb-[5px]">정답 여부 선택</div>
+                <div className="flex gap-[10px]">
+                  <button
+                    type="button"
+                    disabled={(isCurrentConfirmed && !editMode) || isProcessing}
+                    onClick={() => handleSelect(true)}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-[8px] h-[52px] rounded-[12px] text-[15px] font-bold border-2 transition-colors disabled:opacity-50',
+                      localCorrect === true
+                        ? 'border-[#16a86a] bg-[#eaf7f0] text-[#16a86a]'
+                        : 'border-[#ebedf1] bg-white text-[#8a8f99] hover:border-[#16a86a] hover:bg-[#f4fcf8] hover:text-[#16a86a]',
+                    )}
                   >
-                    <div className="w-[200px] px-[16px] py-[11px] text-[14px] text-[#15171d] font-semibold">
-                      {g.student_name}
-                    </div>
-                    <div className="flex-1 px-[16px] py-[11px] text-[14px] text-[#3a3e36] font-mono">
-                      {answerText}
-                    </div>
-                    <div className="flex-1 px-[16px] py-[11px] text-[14px] text-[#9aa0ab] font-mono">
-                      {modelText}
-                    </div>
-                    <div className="w-[120px] px-[16px] py-[11px]">
-                      {isCorrect ? (
-                        <span className="inline-flex items-center gap-[4px] text-[12px] font-bold px-[10px] py-[4px] rounded-[20px] bg-[#e7f6ee] text-[#138a5a]">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          정답
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-[4px] text-[12px] font-bold px-[10px] py-[4px] rounded-[20px] bg-[#fdecec] text-[#c0392b]">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                          </svg>
-                          오답
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className="w-[80px] px-[16px] py-[11px] text-[14px] font-bold"
-                      style={{ color: isCorrect ? '#138a5a' : '#c0392b' }}
-                    >
-                      {g.score} / {g.max_score}
-                    </div>
-                  </div>
-                )
-              })}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    정답
+                  </button>
+                  <button
+                    type="button"
+                    disabled={(isCurrentConfirmed && !editMode) || isProcessing}
+                    onClick={() => handleSelect(false)}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-[8px] h-[52px] rounded-[12px] text-[15px] font-bold border-2 transition-colors disabled:opacity-50',
+                      localCorrect === false
+                        ? 'border-[#c0392b] bg-[#fdecec] text-[#c0392b]'
+                        : 'border-[#ebedf1] bg-white text-[#8a8f99] hover:border-[#c0392b] hover:bg-[#fdf5f5] hover:text-[#c0392b]',
+                    )}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                    </svg>
+                    오답
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 확정 버튼 */}
+            <div className="flex-none px-[24px] py-[14px] border-t border-[#f0f1f4] flex gap-[10px]">
+              {currentGrade && (
+                <button
+                  type="button"
+                  onClick={() => setEditMode((v) => !v)}
+                  disabled={isProcessing}
+                  className={cn(
+                    'flex-1 h-[42px] border rounded-[10px] text-[14px] font-bold transition-colors',
+                    editMode
+                      ? 'border-accent bg-accent/[.08] text-accent'
+                      : 'border-[#e0e3e9] bg-white text-[#4b4f57] hover:bg-[#f7f8fa]',
+                  )}
+                >
+                  {editMode ? '수정 중' : '수정'}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={isProcessing || (!(isCurrentConfirmed && !editMode) && localCorrect === null)}
+                onClick={handleConfirm}
+                className={cn(
+                  'flex items-center justify-center gap-[6px] h-[42px] rounded-[10px] text-[14px] font-bold transition-opacity disabled:opacity-40',
+                  currentGrade ? 'flex-[1.4]' : 'flex-1',
+                  isCurrentConfirmed && !editMode
+                    ? 'bg-[#f1f2f5] text-[#71757e]'
+                    : 'bg-[#16a86a] text-white shadow-[0_3px_10px_#16a86a40] hover:opacity-90',
+                )}
+              >
+                {isCurrentConfirmed && !editMode ? (
+                  <>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    확정됨 · 다음
+                  </>
+                ) : isProcessing ? (
+                  '처리 중...'
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    확정
+                  </>
+                )}
+              </button>
             </div>
           </div>
-
-          <div className="text-[12.5px] text-[#9aa0ab] px-[30px] py-[10px] flex gap-[18px] flex-none">
-            <span className="flex items-center gap-[6px]">
-              <span className="w-[8px] h-[8px] rounded-full bg-[#16a86a]" />
-              정답
-            </span>
-            <span className="flex items-center gap-[6px]">
-              <span className="w-[8px] h-[8px] rounded-full bg-[#c0392b]" />
-              오답
-            </span>
-          </div>
-        </>
-      )}
+        </div>
+      ) : null}
 
       {/* Footer */}
       <div className="flex-none px-[30px] py-[16px] border-t border-[#f0f1f4] flex items-center justify-between bg-white">
@@ -373,22 +507,17 @@ function AutoGradeDetailView({
         >
           현황으로
         </button>
-        {hasGrades && !isGrading && (
+        {sheets.length > 0 && (
           <button
             type="button"
-            onClick={onConfirmAll}
-            disabled={isConfirmingAll || allConfirmed}
-            className={cn(
-              'flex items-center gap-[7px] h-[44px] px-[22px] rounded-[11px] text-[14.5px] font-bold transition-opacity',
-              allConfirmed
-                ? 'bg-[#eaf7f0] text-[#138a5a] cursor-default'
-                : 'bg-[#16a86a] text-white shadow-[0_4px_12px_#16a86a40] hover:opacity-90 disabled:opacity-50',
-            )}
+            disabled={isLastSheet && !!isCurrentConfirmed}
+            onClick={() => onNavSheet(1)}
+            className="flex items-center gap-[6px] h-[44px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
+            다음 학생
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            {allConfirmed ? '전체 확정 완료' : isConfirmingAll ? '확정 중...' : '전체 자동채점 확정'}
           </button>
         )}
       </div>
@@ -459,6 +588,7 @@ function LlmGradeDetailView({
   gradingJobProgress,
   isConfirming,
   isUpdating,
+  isDeletingGrades,
   selectedGradeIdx,
   selectedGrade,
   isLastGrade,
@@ -466,6 +596,7 @@ function LlmGradeDetailView({
   onNavGrade,
   onConfirm,
   onUpdate,
+  onDeleteGrades,
   onBack,
 }: {
   problem: ProblemRow
@@ -475,6 +606,7 @@ function LlmGradeDetailView({
   gradingJobProgress: { current: number; total: number; percent: number } | null
   isConfirming: boolean
   isUpdating: boolean
+  isDeletingGrades: boolean
   selectedGradeIdx: number
   selectedGrade: GradeResponse | null
   isLastGrade: boolean
@@ -482,6 +614,7 @@ function LlmGradeDetailView({
   onNavGrade: (delta: number) => void
   onConfirm: (gradeId: number) => void
   onUpdate: (gradeId: number, body: GradeUpdateRequest) => void
+  onDeleteGrades: () => void
   onBack: () => void
 }) {
   const [editMode, setEditMode] = useState(false)
@@ -541,6 +674,17 @@ function LlmGradeDetailView({
 
             {grades.length > 0 && (
               <div className="flex items-center gap-[9px]">
+                <button
+                  type="button"
+                  disabled={isDeletingGrades || isGrading}
+                  onClick={onDeleteGrades}
+                  className="flex items-center gap-[5px] h-[34px] px-[12px] border border-[#e2e4e9] bg-white rounded-[9px] text-[12.5px] text-[#9aa0ab] font-semibold hover:border-[#c0392b] hover:text-[#c0392b] hover:bg-[#fdf5f5] disabled:opacity-30 transition-colors mr-[3px]"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  채점 초기화
+                </button>
                 <button
                   type="button"
                   disabled={selectedGradeIdx === 0}
@@ -818,11 +962,23 @@ export default function Step6Page() {
     isLastGrade,
     confirmGrade,
     isConfirming,
-    confirmAll,
-    isConfirmingAll,
     updateGrade,
     isUpdating,
+    sheets,
+    selectedSheetIdx,
+    navSheet,
+    selectedSheet,
+    isLastSheet,
+    currentGrade,
+    createAutoGrade,
+    isCreatingAutoGrade,
+    updateAutoGrade,
+    isUpdatingAutoGrade,
+    deleteGrades,
+    isDeletingGrades,
     selectedModelAnswer,
+    selectedSheetPdfUrl,
+    selectedSheetRegions,
   } = useStep6(examId)
 
   const problems: ProblemRow[] = progress?.problems ?? []
@@ -851,10 +1007,20 @@ export default function Step6Page() {
           grades={grades}
           modelAnswer={selectedModelAnswer}
           isGradesLoading={isGradesLoading}
-          isGrading={isGrading}
-          isConfirmingAll={isConfirmingAll}
-          onRunGrading={runGrading}
-          onConfirmAll={confirmAll}
+          sheets={sheets}
+          selectedSheetIdx={selectedSheetIdx}
+          selectedSheet={selectedSheet}
+          isLastSheet={isLastSheet}
+          currentGrade={currentGrade}
+          isCreatingGrade={isCreatingAutoGrade}
+          isUpdatingGrade={isUpdatingAutoGrade}
+          isDeletingGrades={isDeletingGrades}
+          pdfUrl={selectedSheetPdfUrl}
+          sheetRegions={selectedSheetRegions}
+          onCreateGrade={createAutoGrade}
+          onUpdateGrade={updateAutoGrade}
+          onDeleteGrades={deleteGrades}
+          onNavSheet={navSheet}
           onBack={goToList}
         />
       ) : selectedProblem ? (
@@ -866,6 +1032,7 @@ export default function Step6Page() {
           gradingJobProgress={gradingJobProgress}
           isConfirming={isConfirming}
           isUpdating={isUpdating}
+          isDeletingGrades={isDeletingGrades}
           selectedGradeIdx={selectedGradeIdx}
           selectedGrade={selectedGrade}
           isLastGrade={isLastGrade}
@@ -873,6 +1040,7 @@ export default function Step6Page() {
           onNavGrade={navGrade}
           onConfirm={confirmGrade}
           onUpdate={updateGrade}
+          onDeleteGrades={deleteGrades}
           onBack={goToList}
         />
       ) : null}
