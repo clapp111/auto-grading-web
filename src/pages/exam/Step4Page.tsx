@@ -177,28 +177,28 @@ function ProblemSelect({ problems, activeProblemId, onChange }: ProblemSelectPro
 
 // ── Layout mode toggle ────────────────────────────────────────────────────
 
-interface LayoutToggleProps {
-  mode: 'FIXED' | 'FREE'
-  onChange: (mode: 'FIXED' | 'FREE') => void
-}
-
-function LayoutToggle({ mode, onChange }: LayoutToggleProps) {
-  const segOn =
-    'flex items-center h-[34px] px-[15px] rounded-[9px] bg-white text-[13px] font-bold text-[#15171d] shadow-[0_1px_3px_rgba(20,24,40,.12)]'
-  const segOff =
-    'flex items-center h-[34px] px-[15px] rounded-[9px] text-[13px] font-semibold text-[#8a8f99] hover:text-[#5f636b] transition-colors cursor-pointer'
-
-  return (
-    <div className="flex bg-[#f1f2f5] rounded-[11px] p-[3px] gap-[1px]">
-      <span className={mode === 'FIXED' ? segOn : segOff} onClick={() => onChange('FIXED')}>
-        고정 레이아웃
-      </span>
-      <span className={mode === 'FREE' ? segOn : segOff} onClick={() => onChange('FREE')}>
-        자유 레이아웃
-      </span>
-    </div>
-  )
-}
+// interface LayoutToggleProps {
+//   mode: 'FIXED' | 'FREE'
+//   onChange: (mode: 'FIXED' | 'FREE') => void
+// }
+//
+// function LayoutToggle({ mode, onChange }: LayoutToggleProps) {
+//   const segOn =
+//     'flex items-center h-[34px] px-[15px] rounded-[9px] bg-white text-[13px] font-bold text-[#15171d] shadow-[0_1px_3px_rgba(20,24,40,.12)]'
+//   const segOff =
+//     'flex items-center h-[34px] px-[15px] rounded-[9px] text-[13px] font-semibold text-[#8a8f99] hover:text-[#5f636b] transition-colors cursor-pointer'
+//
+//   return (
+//     <div className="flex bg-[#f1f2f5] rounded-[11px] p-[3px] gap-[1px]">
+//       <span className={mode === 'FIXED' ? segOn : segOff} onClick={() => onChange('FIXED')}>
+//         고정 레이아웃
+//       </span>
+//       <span className={mode === 'FREE' ? segOn : segOff} onClick={() => onChange('FREE')}>
+//         자유 레이아웃
+//       </span>
+//     </div>
+//   )
+// }
 
 // ── Step4Page ─────────────────────────────────────────────────────────────
 
@@ -229,7 +229,7 @@ export default function Step4Page() {
     selectedSheet,
     selectedSheetIdx,
     setSelectedSheetIdx,
-    layoutMode,
+    // layoutMode,
     isFixedMode,
     isFineTuneMode,
     isTemplateApplied,
@@ -248,7 +248,7 @@ export default function Step4Page() {
     deleteLocalRegion,
     saveAndApplyTemplate,
     isSavingTemplate,
-    setLayoutMode,
+    // setLayoutMode,
     localRegionCount,
     canApplyTemplate,
   } = useStep4(examId)
@@ -273,7 +273,7 @@ export default function Step4Page() {
               영역을 지정하고 문제 번호를 매핑하세요
             </p>
           </div>
-          <LayoutToggle mode={layoutMode} onChange={setLayoutMode} />
+          {/* <LayoutToggle mode={layoutMode} onChange={setLayoutMode} /> */}
         </div>
 
         {/* ── Toolbar ────────────────────────────────────────────────────── */}

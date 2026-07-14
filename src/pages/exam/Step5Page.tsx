@@ -298,6 +298,7 @@ export default function Step5Page() {
 
   const {
     isAllOcrRunning,
+    allOcrJobProgress,
     runAllOcr,
     studentOcrStudentId,
     isStudentOcrRunning,
@@ -719,9 +720,21 @@ export default function Step5Page() {
               <p className="text-[17px] font-bold text-[#15171d] mb-[6px]">
                 답안 영역을 인식 중입니다
               </p>
-              <p className="text-[13.5px] text-[#71757e]">
-                몇 분가량 걸릴 수 있습니다
-              </p>
+              {allOcrJobProgress && allOcrJobProgress.total > 0 ? (
+                <>
+                  <div className="w-[200px] h-[6px] rounded-full bg-[#eef0f3] overflow-hidden mx-auto mt-[10px] mb-[8px]">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-500"
+                      style={{ width: `${allOcrJobProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-[13.5px] text-[#71757e]">
+                    {allOcrJobProgress.current} / {allOcrJobProgress.total} 인식 완료
+                  </p>
+                </>
+              ) : (
+                <p className="text-[13.5px] text-[#71757e]">몇 분가량 걸릴 수 있습니다</p>
+              )}
             </div>
           </div>
         </div>

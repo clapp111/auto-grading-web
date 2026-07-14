@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import { Stage, Layer, Rect, Text, Line, Circle } from 'react-konva'
 import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react'
@@ -37,6 +37,7 @@ interface PdfCanvasProps {
   onDrawComplete?: (selection: DrawSelection) => void
   currentPage?: number
   onPageChange?: (page: number) => void
+  initialZoom?: number
 }
 
 export function PdfCanvas({
@@ -47,10 +48,11 @@ export function PdfCanvas({
   onDrawComplete,
   currentPage = 1,
   onPageChange,
+  initialZoom = 1,
 }: PdfCanvasProps) {
   const [numPages, setNumPages] = useState(0)
   const [stageSize, setStageSize] = useState({ width: pageWidth, height: 600 })
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(initialZoom)
 
   const changeZoom = (delta: number) =>
     setZoom((z) => Math.min(3, Math.max(0.5, Math.round((z + delta) * 4) / 4)))
@@ -67,6 +69,26 @@ export function PdfCanvas({
   const lassoVerticesRef = useRef<{ x: number; y: number }[]>([])
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // 첫 번째 영역을 기준으로 스크롤 중앙 이동
+  const regionKey = useMemo(
+    () => (regions[0] ? `${regions[0].region.x.toFixed(4)}-${regions[0].region.y.toFixed(4)}` : null),
+    [regions],
+  )
+  useEffect(() => {
+    if (!scrollRef.current || !regionKey || stageSize.height <= 0) return
+    const region = regions[0].region
+    if (region.page !== currentPage) return
+    const renderedW = pageWidth * zoom
+    const renderedH = stageSize.height
+    const cx = (region.x + region.w / 2) * renderedW
+    const cy = (region.y + region.h / 2) * renderedH
+    const el = scrollRef.current
+    el.scrollLeft = cx - el.clientWidth / 2
+    el.scrollTop = cy - el.clientHeight / 2
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionKey, stageSize.height])
 
   useEffect(() => {
     const el = containerRef.current
@@ -249,6 +271,7 @@ export function PdfCanvas({
       )}
 
       <div
+        ref={scrollRef}
         className="flex-1 flex items-start justify-center overflow-auto"
         style={{ cursor: drawMode ? 'crosshair' : 'default' }}
       >

@@ -88,7 +88,7 @@ export function useStep5(examId: number) {
   const pdfUrl = downloadRes?.url ?? null
 
   // 전체 OCR 폴링
-  useJobPolling({
+  const { job: allOcrJob } = useJobPolling({
     jobId: allOcrJobId ? String(allOcrJobId) : null,
     onComplete: () => {
       qc.invalidateQueries({ queryKey: ['ocr-progress', examId] })
@@ -335,6 +335,7 @@ export function useStep5(examId: number) {
   return {
     // OCR 실행
     isAllOcrRunning: allOcrPhase !== 'idle',
+    allOcrJobProgress: allOcrJob?.progress_json ?? null,
     runAllOcr,
     studentOcrStudentId,
     isStudentOcrRunning: !!studentOcrStudentId,
