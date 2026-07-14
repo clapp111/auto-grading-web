@@ -8,7 +8,7 @@ import { regionsApi } from '@/api/regions'
 import { useJobPolling } from '@/hooks/common/useJobPolling'
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/types/constants'
 import type { Region, Point, AnswerRegionResponse } from '@/types/dto'
-import type { LayoutMode, RegionShape } from '@/types/enums'
+import type { RegionShape } from '@/types/enums'
 import type { DrawSelection } from '@/components/exam/PdfCanvas'
 
 export interface LocalRegion {
@@ -92,7 +92,7 @@ export function useStep4(examId: number) {
   const firstSheetRegions: AnswerRegionResponse[] = firstRegionsRes?.data ?? []
   const selectedSheetRegions: AnswerRegionResponse[] = selectedRegionsRes?.data ?? []
 
-  const layoutMode: LayoutMode = exam?.layout_mode ?? 'FIXED'
+  const layoutMode = 'FIXED' as const
   const isFixedMode = layoutMode === 'FIXED'
   const isTemplateApplied = firstSheetRegions.length > 0
   const isFineTuneMode = !isFixedMode || isTemplateApplied
@@ -179,17 +179,6 @@ export function useStep4(examId: number) {
     onError: (err: Error) => toast.error(err.message || '템플릿 적용에 실패했습니다.'),
   })
 
-  const setLayoutModeMutation = useMutation({
-    mutationFn: (mode: LayoutMode) => examsApi.update(examId, { layout_mode: mode }),
-    onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ['exam', examId] }),
-        qc.invalidateQueries({ queryKey: ['regions'] }),
-      ])
-    },
-    onError: () => toast.error('레이아웃 모드 변경에 실패했습니다.'),
-  })
-
   const handleDrawComplete = useCallback(
     (selection: DrawSelection) => {
       if (!effectiveActiveProblemId) {
@@ -200,6 +189,12 @@ export function useStep4(examId: number) {
       const bbox_region = selection.bbox_region
       const shape = selection.shape
       const polygon_points = selection.shape === 'LASSO' ? selection.polygon_points : undefined
+
+      // 영역 지정 후 다음 문제로 자동 전진
+      const currentIdx = problems.findIndex((p) => p.problem_id === effectiveActiveProblemId)
+      if (currentIdx >= 0 && currentIdx < problems.length - 1) {
+        setActiveProblemId(problems[currentIdx + 1].problem_id)
+      }
 
       if (isFineTuneMode) {
         if (!selectedSheet) return
@@ -219,7 +214,7 @@ export function useStep4(examId: number) {
         { tempId: nextTempId(), problem_id: effectiveActiveProblemId, bbox_region, shape, polygon_points },
       ])
     },
-    [effectiveActiveProblemId, isFineTuneMode, selectedSheet, addRegionMutation],
+    [effectiveActiveProblemId, problems, isFineTuneMode, selectedSheet, addRegionMutation],
   )
 
   const deleteLocalRegion = useCallback(
@@ -359,7 +354,6 @@ export function useStep4(examId: number) {
     deleteLocalRegion,
     saveAndApplyTemplate: () => saveAndApplyMutation.mutate(),
     isSavingTemplate: saveAndApplyMutation.isPending,
-    setLayoutMode: (mode: LayoutMode) => setLayoutModeMutation.mutate(mode),
     localRegionCount: localRegions.length,
     canApplyTemplate,
     problemColor,

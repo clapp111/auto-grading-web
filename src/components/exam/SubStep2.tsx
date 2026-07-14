@@ -46,10 +46,11 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
   // OCR 대상 문제 (서술형·손코딩)
   const ocrProblems = problems.filter(p => OCR_REQUIRED_TYPES.includes(p.type))
 
-  // 첫 OCR 문제를 기본 탭으로 설정
+  // 첫 OCR 문제를 기본 탭·매핑 대상으로 설정
   useEffect(() => {
     if (ocrProblems.length > 0 && activeTab === null) {
       setActiveTab(ocrProblems[0].problem_id)
+      setActiveProblemId(ocrProblems[0].problem_id)
     }
   }, [ocrProblems, activeTab])
 
@@ -163,31 +164,6 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
               </svg>
               사각형
             </button>
-            
-            {/* 매핑할 문제 선택 */}
-            <div className="ml-auto flex items-center gap-[8px]">
-              <span className="text-[12.5px] text-[#8a8f99] font-medium whitespace-nowrap">
-                매핑할 문제
-              </span>
-              <div className="relative">
-                <select
-                  value={activeProblemId ?? ''}
-                  onChange={e => setActiveProblemId(Number(e.target.value) || null)}
-                  className="appearance-none h-[34px] pl-[10px] pr-[28px] border border-[#e2e4e9] bg-white rounded-[9px] text-[13px] text-[#4b4f57] font-semibold cursor-pointer outline-none"
-                >
-                  <option value="">선택</option>
-                  {ocrProblems.map(p => (
-                    <option key={p.problem_id} value={p.problem_id}>
-                      {p.label} {TYPE_LABELS_KO[p.type]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={13}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9aa0ab] pointer-events-none"
-                />
-              </div>
-            </div>
           </div>
 
           {modelAnswerUrl ? (
@@ -249,11 +225,14 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
                     <button
                       key={p.problem_id}
                       type="button"
-                      onClick={() => setActiveTab(p.problem_id)}
+                      onClick={() => {
+                        setActiveTab(p.problem_id)
+                        setActiveProblemId(p.problem_id)
+                      }}
                       className="h-[32px] flex items-center px-[14px] rounded-[9px] text-[13px] font-semibold transition-colors"
                       style={
                         isActive
-                          ? { background: color + '20', color: color }
+                          ? { background: color + '20', color: color, outline: `2px solid ${color}`, outlineOffset: '-1px' }
                           : { background: '#f4f5f7', color: '#8a8f99' }
                       }
                     >
