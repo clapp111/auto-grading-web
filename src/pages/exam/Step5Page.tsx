@@ -68,7 +68,7 @@ function AnswerImagePanel({
     : []
 
   return (
-    <div className="flex-1 bg-[#eceef2] p-6 flex flex-col min-w-0 min-h-0">
+    <div className="flex-[1] bg-[#eceef2] p-6 flex flex-col min-w-0 min-h-0">
       <p className="text-[11px] font-semibold text-[#9aa0ab] font-mono mb-3 flex-none">
         {result.problem_label} 영역 ·{' '}
         {result.problem_type === 'CODING'
@@ -82,7 +82,7 @@ function AnswerImagePanel({
       <div className="flex-1 min-h-0">
         <PdfCanvas
           url={pdfUrl}
-          pageWidth={380}
+          pageWidth={560}
           regions={overlay}
           drawMode={null}
           currentPage={page}

@@ -152,7 +152,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
       {/* Body */}
       <div className="flex-1 flex min-h-0">
         {/* Left: 모범답안 PDF 뷰어 */}
-        <div className="flex-[1.2] bg-[#eceef2] p-6 flex flex-col min-w-0">
+        <div className="flex-[1] bg-[#eceef2] p-6 flex flex-col min-w-0">
           {/* 툴바 */}
           <div className="flex items-center gap-2 mb-[14px]">
             <button
