@@ -339,7 +339,7 @@ export function PdfCanvas({
                               .filter(p => p.page === currentPage)
                               .flatMap(p => [p.x * stageSize.width, p.y * stageSize.height])}
                             stroke={r.color}
-                            strokeWidth={2}
+                            strokeWidth={1}
                             fill={r.color + '1f'}
                             closed
                           />
@@ -348,7 +348,7 @@ export function PdfCanvas({
                             key={`fill-${i}`}
                             x={rx} y={ry}
                             width={rw} height={rh}
-                            stroke={r.color} strokeWidth={2}
+                            stroke={r.color} strokeWidth={1}
                             fill={r.color + '1f'} cornerRadius={5}
                           />
                         )
@@ -357,13 +357,13 @@ export function PdfCanvas({
                         shapeEl,
                         <Rect
                           key={`lbl-bg-${i}`}
-                          x={rx + 6} y={ry - 14}
-                          width={r.label.length * 7.2 + 14} height={18}
+                          x={rx - (/[가-힣]/.test(r.label) ? r.label.length * 12 + 14 : r.label.length * 7.2 + 14)} y={ry}
+                          width={/[가-힣]/.test(r.label) ? r.label.length * 12 + 14 : r.label.length * 7.2 + 14} height={18}
                           fill={r.color} cornerRadius={4}
                         />,
                         <Text
                           key={`lbl-txt-${i}`}
-                          x={rx + 13} y={ry - 10}
+                          x={rx - (/[가-힣]/.test(r.label) ? r.label.length * 12 + 7 : r.label.length * 7.2 + 7)} y={ry + 4}
                           text={r.label} fontSize={11} fontStyle="bold" fill="#fff"
                         />,
                       ]
@@ -374,7 +374,7 @@ export function PdfCanvas({
                     <Rect
                       x={currentRect.x} y={currentRect.y}
                       width={currentRect.w} height={currentRect.h}
-                      stroke="#4F46E5" strokeWidth={2}
+                      stroke="#4F46E5" strokeWidth={1}
                       fill="#4F46E520" dash={[6, 3]} cornerRadius={4}
                     />
                   )}
@@ -384,7 +384,7 @@ export function PdfCanvas({
                     <Line
                       points={lassoVertices.flatMap(p => [p.x, p.y])}
                       stroke="#4F46E5"
-                      strokeWidth={2}
+                      strokeWidth={1}
                       closed={false}
                     />
                   )}
@@ -399,7 +399,7 @@ export function PdfCanvas({
                         lassoPreviewPos.y,
                       ]}
                       stroke="#4F46E5"
-                      strokeWidth={1.5}
+                      strokeWidth={1}
                       dash={[5, 4]}
                       opacity={0.5}
                     />
@@ -413,7 +413,7 @@ export function PdfCanvas({
                       radius={i === 0 ? 5 : 3.5}
                       fill={i === 0 ? '#fff' : '#4F46E5'}
                       stroke="#4F46E5"
-                      strokeWidth={2}
+                      strokeWidth={1}
                     />
                   ))}
                 </Layer>

@@ -93,7 +93,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
       const prob = problems.find(p => p.problem_id === a.problem_id)
       return {
         region: a.region!,
-        label: prob ? `${prob.label} · ${TYPE_LABELS_KO[prob.type]}` : '',
+        label: prob ? prob.label : '',
         color: prob ? TYPE_COLORS[prob.type] : '#888',
       }
     })

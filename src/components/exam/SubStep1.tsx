@@ -309,7 +309,7 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
     .filter(p => p.region)
     .map(p => ({
       region: p.region!,
-      label: `${p.label} · ${TYPE_LABELS_KO[p.type]}`,
+      label: p.label,
       color: TYPE_COLORS[p.type],
     }))
 
