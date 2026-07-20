@@ -342,7 +342,7 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
       {/* Body */}
       <div className="flex-1 flex min-h-0">
         {/* Left: PDF 뷰어 */}
-        <div className="flex-[1.35] bg-[#eceef2] p-6 flex flex-col min-w-0">
+        <div className="flex-[2.5] bg-[#eceef2] p-6 flex flex-col min-w-0">
           {/* 툴바 */}
           <div className="flex items-center justify-between mb-[14px]">
             <button
@@ -359,7 +359,7 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
           {sheetUrl ? (
             <PdfCanvas
               url={sheetUrl}
-              pageWidth={430}
+              pageWidth={560}
               regions={regionOverlays}
               drawMode="rect"
               currentPage={currentPage}

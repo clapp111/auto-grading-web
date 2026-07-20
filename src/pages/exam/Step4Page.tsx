@@ -380,7 +380,7 @@ export default function Step4Page() {
         <div className="flex-1 flex min-h-0">
 
           {/* PDF Viewer */}
-          <div className="flex-[1.5] bg-[#eceef2] p-[24px] flex items-start justify-center min-w-0">
+          <div className="flex-[2.5] bg-[#eceef2] p-[24px] flex items-start justify-center min-w-0">
             {sheets.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full gap-[10px]">
                 <div className="w-[48px] h-[48px] rounded-[13px] bg-white/60 flex items-center justify-center">
@@ -407,7 +407,7 @@ export default function Step4Page() {
                 <div className="flex-1 min-h-0">
                   <PdfCanvas
                     url={pdfUrl}
-                    pageWidth={420}
+                    pageWidth={560}
                     regions={overlays}
                     drawMode={drawTool}
                     onDrawComplete={handleDrawComplete}
@@ -422,7 +422,9 @@ export default function Step4Page() {
           {/* Right panel */}
           <div className="flex-1 border-l border-[#f0f1f4] min-w-0">
             <RegionMappingPanel
-              mappingList={mappingList}
+              mappingList={[...mappingList]
+                .sort((a, b) => a.problemLabel.localeCompare(b.problemLabel, undefined, { numeric: true }))
+                .map((item, i) => ({ ...item, index: i + 1 }))}
               sheets={sheets}
               selectedSheetIdx={selectedSheetIdx}
               onSelectSheet={setSelectedSheetIdx}

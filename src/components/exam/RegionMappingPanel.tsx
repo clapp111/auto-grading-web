@@ -49,8 +49,6 @@ interface RegionMappingPanelProps {
   isFineTuneMode: boolean
 }
 
-const MAX_VISIBLE_THUMBS = 5
-
 export function RegionMappingPanel({
   mappingList,
   sheets,
@@ -60,9 +58,6 @@ export function RegionMappingPanel({
   onDeleteLocal,
   isFineTuneMode,
 }: RegionMappingPanelProps) {
-  const visibleSheets = sheets.slice(0, MAX_VISIBLE_THUMBS)
-  const overflow = sheets.length - MAX_VISIBLE_THUMBS
-
   const handleDelete = (item: MappingItem) => {
     if (item.serverId !== null) {
       onDeleteServer(item.serverId)
@@ -103,39 +98,14 @@ export function RegionMappingPanel({
               key={item.key}
               className="group border border-[#ebedf1] rounded-[11px] px-[14px] py-[13px] flex items-center gap-[11px] hover:bg-[#fafbfc] transition-colors"
             >
-              {/* Index badge */}
+              {/* Problem label */}
               <span
-                className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center text-[12px] font-extrabold flex-none"
-                style={{ background: item.color + '1c', color: item.color }}
-              >
-                {item.index}
-              </span>
-
-              {/* Label */}
-              <span className="text-[14px] font-semibold text-[#3a3e46] flex-1 min-w-0">
-                영역 {item.index}
-              </span>
-
-              {/* Arrow */}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-[#cdd1d8] flex-none">
-                <path
-                  d="M5 12h14m-6-6l6 6-6 6"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              {/* Problem mapping */}
+                className="w-[8px] h-[8px] rounded-full flex-none"
+                style={{ background: item.color }}
+              />
               <span
-                className="flex items-center gap-[6px] text-[13.5px] font-bold"
-                style={{ color: item.textColor }}
+                className="text-[14px] font-bold flex-1 min-w-0 text-[#15171d]"
               >
-                <span
-                  className="w-[8px] h-[8px] rounded-full flex-none"
-                  style={{ background: item.color }}
-                />
                 {item.problemLabel}
               </span>
 
@@ -149,9 +119,9 @@ export function RegionMappingPanel({
                 <button
                   type="button"
                   onClick={() => handleDelete(item)}
-                  className="text-[#d8dae0] hover:text-[#9aa0ab] transition-colors opacity-0 group-hover:opacity-100 ml-[2px]"
+                  className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               )}
             </div>
@@ -165,8 +135,8 @@ export function RegionMappingPanel({
           <p className="text-[12px] text-[#9aa0ab] font-semibold mb-[9px]">
             답안지 {selectedSheetIdx + 1} / {sheets.length}
           </p>
-          <div className="flex gap-[8px] items-center">
-            {visibleSheets.map((_, i) => (
+          <div className="flex gap-[8px] items-center overflow-x-auto pb-[4px]">
+            {sheets.map((_, i) => (
               <SheetThumb
                 key={i}
                 idx={i}
@@ -174,11 +144,6 @@ export function RegionMappingPanel({
                 onClick={() => onSelectSheet(i)}
               />
             ))}
-            {overflow > 0 && (
-              <div className="flex items-center justify-center w-[40px] h-[52px] rounded-[6px] bg-[#f1f2f5] text-[#9aa0ab] text-[12px] font-bold flex-none">
-                +{overflow}
-              </div>
-            )}
           </div>
         </div>
       )}
