@@ -368,12 +368,11 @@ function AutoGradeDetailView({
             {pdfUrl ? (
               <PdfCanvas
                 url={pdfUrl}
-                pageWidth={560}
+                pageWidth={840}
                 regions={regionOverlay}
                 drawMode={null}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
-                initialZoom={2.0}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-[13px] text-[#9aa0ab]">

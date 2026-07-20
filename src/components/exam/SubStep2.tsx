@@ -169,7 +169,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
           {modelAnswerUrl ? (
             <PdfCanvas
               url={modelAnswerUrl}
-              pageWidth={400}
+              pageWidth={560}
               regions={regionOverlays}
               drawMode="rect"
               currentPage={currentPage}

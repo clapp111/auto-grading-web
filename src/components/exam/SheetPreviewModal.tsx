@@ -65,7 +65,7 @@ export function SheetPreviewModal({ sheet, onClose }: SheetPreviewModalProps) {
           ) : (
             <PdfCanvas
               url={data?.url ?? null}
-              pageWidth={530}
+              pageWidth={560}
               regions={overlays}
               drawMode={null}
               currentPage={currentPage}

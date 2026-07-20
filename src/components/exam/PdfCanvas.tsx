@@ -42,7 +42,7 @@ interface PdfCanvasProps {
 
 export function PdfCanvas({
   url,
-  pageWidth = 430,
+  pageWidth = 560,
   regions = [],
   drawMode = null,
   onDrawComplete,

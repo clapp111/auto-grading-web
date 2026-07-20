@@ -410,7 +410,7 @@ export default function Step4Page() {
                 <div className="flex-1 min-h-0">
                   <PdfCanvas
                     url={pdfUrl}
-                    pageWidth={560}
+                    pageWidth={840}
                     regions={overlays}
                     drawMode={drawTool}
                     onDrawComplete={handleDrawComplete}

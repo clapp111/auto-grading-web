@@ -359,7 +359,7 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
           {sheetUrl ? (
             <PdfCanvas
               url={sheetUrl}
-              pageWidth={560}
+              pageWidth={840}
               regions={regionOverlays}
               drawMode="rect"
               currentPage={currentPage}
