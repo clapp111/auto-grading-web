@@ -222,47 +222,53 @@ export default function Step7Page() {
 
           {/* Score table */}
           <div className="border border-[#ebedf1] rounded-[13px] overflow-hidden print:overflow-visible">
-            <div className="flex items-center bg-[#fafbfc] border-b border-[#eef0f3] text-[12.5px] text-[#8a8f99] font-bold">
-              <div className="flex-1 px-[18px] py-[12px]">이름</div>
-              <div className="w-[110px] px-[16px] py-[12px]">학번</div>
-              {problems.map((p) => (
-                <div key={p.problem_id} className="w-[70px] px-[16px] py-[12px]">
-                  {p.label}
+            <div className="overflow-x-auto">
+              <div className="min-w-max">
+                {/* Header */}
+                <div className="flex items-center bg-[#fafbfc] border-b border-[#eef0f3] text-[12.5px] text-[#8a8f99] font-bold">
+                  <div className="sticky left-0 z-10 bg-[#fafbfc] w-[130px] shrink-0 px-[18px] py-[12px]">이름</div>
+                  <div className="sticky left-[130px] z-10 bg-[#fafbfc] w-[120px] shrink-0 px-[16px] py-[12px] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)]">학번</div>
+                  {problems.map((p) => (
+                    <div key={p.problem_id} className="w-[70px] shrink-0 px-[16px] py-[12px]">
+                      {p.label}
+                    </div>
+                  ))}
+                  <div className="sticky right-0 z-10 bg-[#fafbfc] w-[90px] shrink-0 px-[16px] py-[12px] shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.08)]">총점</div>
                 </div>
-              ))}
-              <div className="w-[90px] px-[16px] py-[12px]">총점</div>
-            </div>
 
-            {students.length === 0 ? (
-              <div className="px-[18px] py-[48px] text-center text-[13.5px] text-[#9aa0ab]">
-                데이터를 불러오는 중...
-              </div>
-            ) : (
-              students.map((s) => (
-                <div
-                  key={s.student_id}
-                  className="flex items-center border-b border-[#f2f3f6] last:border-0 text-[14px] text-[#3a3e36]"
-                >
-                  <div className="flex-1 px-[18px] py-[11px] font-semibold text-[#15171d]">
-                    {s.name}
+                {/* Rows */}
+                {students.length === 0 ? (
+                  <div className="px-[18px] py-[48px] text-center text-[13.5px] text-[#9aa0ab]">
+                    데이터를 불러오는 중...
                   </div>
-                  <div className="w-[110px] px-[16px] py-[11px] text-[#9aa0ab] font-mono text-[13px]">
-                    {s.student_no}
-                  </div>
-                  {problems.map((p) => {
-                    const ps = s.problem_scores.find((ps) => ps.problem_id === p.problem_id)
-                    return (
-                      <div key={p.problem_id} className="w-[70px] px-[16px] py-[11px]">
-                        {ps?.score != null ? ps.score : '—'}
+                ) : (
+                  students.map((s) => (
+                    <div
+                      key={s.student_id}
+                      className="flex items-center border-b border-[#f2f3f6] last:border-0 text-[14px] text-[#3a3e36]"
+                    >
+                      <div className="sticky left-0 z-10 bg-white w-[130px] shrink-0 px-[18px] py-[11px] font-semibold text-[#15171d]">
+                        {s.name}
                       </div>
-                    )
-                  })}
-                  <div className="w-[90px] px-[16px] py-[11px] font-extrabold text-[#15171d]">
-                    {s.total_score}
-                  </div>
-                </div>
-              ))
-            )}
+                      <div className="sticky left-[130px] z-10 bg-white w-[120px] shrink-0 px-[16px] py-[11px] text-[#9aa0ab] font-mono text-[13px] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                        {s.student_no}
+                      </div>
+                      {problems.map((p) => {
+                        const ps = s.problem_scores.find((ps) => ps.problem_id === p.problem_id)
+                        return (
+                          <div key={p.problem_id} className="w-[70px] shrink-0 px-[16px] py-[11px]">
+                            {ps?.score != null ? ps.score : '—'}
+                          </div>
+                        )
+                      })}
+                      <div className="sticky right-0 z-10 bg-white w-[90px] shrink-0 px-[16px] py-[11px] font-extrabold text-[#15171d] shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                        {s.total_score}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
