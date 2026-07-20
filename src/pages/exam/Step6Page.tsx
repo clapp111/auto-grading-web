@@ -364,16 +364,16 @@ function AutoGradeDetailView({
       ) : selectedSheet ? (
         <div className="flex-1 flex min-h-0">
           {/* Left: 답안지 PDF */}
-          <div className="flex-1 border-r border-[#f0f1f4] bg-[#eceef2] flex flex-col min-w-0 min-h-0 p-4">
+          <div className="flex-[2.5] border-r border-[#f0f1f4] bg-[#eceef2] flex flex-col min-w-0 min-h-0 p-4">
             {pdfUrl ? (
               <PdfCanvas
                 url={pdfUrl}
-                pageWidth={360}
+                pageWidth={560}
                 regions={regionOverlay}
                 drawMode={null}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
-                initialZoom={2.5}
+                initialZoom={2.0}
               />
             ) : (
               <div className="flex-1 flex items-center justify-center text-[13px] text-[#9aa0ab]">
@@ -383,7 +383,7 @@ function AutoGradeDetailView({
           </div>
 
           {/* Right: 채점 패널 */}
-          <div className="flex-[1.05] flex flex-col min-w-0 min-h-0">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
             {/* 패널 헤더 */}
             <div className="px-[24px] py-[18px] pb-[14px] border-b border-[#f0f1f4] flex items-center justify-between flex-none">
               <span className="text-[14.5px] font-bold text-[#15171d]">채점</span>
@@ -788,7 +788,7 @@ function LlmGradeDetailView({
           </div>
 
           {/* Right: 채점 패널 */}
-          <div className="flex-[1.05] flex flex-col min-w-0 min-h-0">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
             <div className="px-[24px] py-[18px] pb-[12px] flex items-center justify-between flex-none">
               <div className="flex items-center gap-[8px]">
                 <span className="text-[14.5px] font-bold text-[#15171d]">채점</span>
