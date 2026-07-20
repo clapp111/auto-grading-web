@@ -96,9 +96,10 @@ interface ProblemSelectProps {
   problems: ProblemResponse[]
   activeProblemId: number | null
   onChange: (id: number) => void
+  mappedLabels?: Set<string>
 }
 
-function ProblemSelect({ problems, activeProblemId, onChange }: ProblemSelectProps) {
+function ProblemSelect({ problems, activeProblemId, onChange, mappedLabels }: ProblemSelectProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -143,6 +144,7 @@ function ProblemSelect({ problems, activeProblemId, onChange }: ProblemSelectPro
             const dot = TYPE_COLORS[p.type]
             const txt = TYPE_TEXT_COLORS[p.type]
             const isActive = p.problem_id === activeProblemId
+            const isMapped = mappedLabels?.has(p.label) ?? false
             return (
               <button
                 key={p.problem_id}
@@ -150,14 +152,14 @@ function ProblemSelect({ problems, activeProblemId, onChange }: ProblemSelectPro
                 onClick={() => { onChange(p.problem_id); setOpen(false) }}
                 className={cn(
                   'w-full flex items-center gap-[8px] px-[14px] py-[9px] text-left hover:bg-[#f7f8fa] transition-colors',
-                  isActive ? 'text-[#15171d]' : 'text-[#4b4f57]',
+                  isActive ? 'text-[#15171d]' : isMapped ? 'text-[#c2c6cd]' : 'text-[#4b4f57]',
                 )}
               >
-                <span className="w-[8px] h-[8px] rounded-full flex-none" style={{ background: dot }} />
+                <span className="w-[8px] h-[8px] rounded-full flex-none" style={{ background: isMapped ? '#d1d4da' : dot }} />
                 <span className="text-[13px] font-semibold flex-1">{p.label}</span>
                 <span
                   className="text-[11.5px] font-semibold px-[6px] py-[1px] rounded-[5px]"
-                  style={{ background: dot + '20', color: txt }}
+                  style={isMapped ? { background: '#f0f1f4', color: '#c2c6cd' } : { background: dot + '20', color: txt }}
                 >
                   {TYPE_LABELS_KO[p.type]}
                 </span>
@@ -329,9 +331,10 @@ export default function Step4Page() {
 
           {/* Problem selector */}
           <ProblemSelect
-            problems={problems}
+            problems={[...problems].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))}
             activeProblemId={activeProblemId}
             onChange={setActiveProblemId}
+            mappedLabels={new Set(mappingList.map(item => item.problemLabel))}
           />
 
           {/* Status badges — right side */}
