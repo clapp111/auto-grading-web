@@ -4,7 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { PdfCanvas } from '@/components/exam/PdfCanvas'
+import { CodeEditor } from '@/components/exam/CodeEditor'
 import { useStep5 } from '@/hooks/exam/useStep5'
+import { useLockedToast } from '@/hooks/common/useLockedToast'
 import { examsApi } from '@/api/exams'
 import { TYPE_COLORS } from '@/types/constants'
 import type { OcrResultResponse } from '@/types/dto'
@@ -97,15 +99,17 @@ function MultipleChoicePanel({
   locked,
   localChoice,
   onSaveChoice,
+  onLockedClick,
 }: {
   locked: boolean
   localChoice: number | null
   onSaveChoice: (choice: number | null) => void
+  onLockedClick: () => void
 }) {
   const choiceCount = 5
 
   return (
-    <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 px-[26px] py-[22px] gap-[20px]">
+    <div className="relative flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 px-[26px] py-[22px] gap-[20px]">
       {/* 보기 버튼 */}
       <div className="flex gap-[10px] flex-wrap">
         {Array.from({ length: choiceCount }, (_, i) => i + 1).map((n) => {
@@ -148,33 +152,64 @@ function MultipleChoicePanel({
       {localChoice === null && (
         <p className="text-[12.5px] text-[#9aa0ab]">무응답 또는 미인식</p>
       )}
+
+      {locked && (
+        <div className="absolute inset-0 z-10 cursor-not-allowed" onClick={onLockedClick} />
+      )}
     </div>
   )
 }
 
 // ── 우측 패널: 서술형 ────────────────────────────────────────────────────────
 function DescriptivePanel({
+  result,
   locked,
   localText,
   setLocalText,
   onBlur,
+  onLockedClick,
 }: {
+  result: OcrResultResponse
   locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
+  onLockedClick: () => void
 }) {
+  const fileName = `answer_${result.problem_label.toLowerCase()}.txt`
+
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 min-h-0 p-[18px]">
       <div className="flex-1 border border-[#e6e8ec] rounded-[12px] overflow-hidden flex flex-col min-h-0">
-        <textarea
-          className="flex-1 p-[18px] text-[15px] text-[#2a2e36] leading-[2] outline-none resize-none bg-[#fcfcfd] font-sans"
-          value={localText}
-          onChange={(e) => setLocalText(e.target.value)}
-          onBlur={onBlur}
-          readOnly={locked}
-          placeholder="OCR 인식 텍스트가 없습니다"
-        />
+        {/* Mac titlebar */}
+        <div className="flex items-center gap-[7px] px-[14px] h-[42px] bg-[#fafbfc] border-b border-[#eef0f3] flex-none">
+          <span className="w-[11px] h-[11px] rounded-full bg-[#f0625c]" />
+          <span className="w-[11px] h-[11px] rounded-full bg-[#f5bb42]" />
+          <span className="w-[11px] h-[11px] rounded-full bg-[#5fc274]" />
+          <span className="text-[12.5px] text-[#8a8f99] ml-[6px] font-mono">{fileName}</span>
+        </div>
+        {/* 라인 번호 + 텍스트영역 */}
+        <div className="flex-1 flex text-[15px] leading-[2] overflow-hidden min-h-0">
+          <div className="py-[18px] px-[12px] text-right text-[#c2c6cd] bg-[#f6f7f9] border-r border-[#eef0f3] select-none flex-none min-w-[42px] overflow-hidden font-mono text-[15px] leading-[2]">
+            {localText.split('\n').map((_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
+          <textarea
+            className="flex-1 py-[18px] px-[15px] text-[15px] text-[#2a2e36] leading-[2] outline-none resize-none bg-[#fcfcfd] font-sans"
+            value={localText}
+            onChange={(e) => setLocalText(e.target.value)}
+            onBlur={onBlur}
+            readOnly={locked}
+            onKeyDown={(e) => {
+              if (!locked) return
+              if (e.ctrlKey || e.metaKey) return
+              if (e.key.length !== 1 && !['Backspace', 'Delete', 'Enter'].includes(e.key)) return
+              onLockedClick()
+            }}
+            placeholder="OCR 인식 텍스트가 없습니다"
+          />
+        </div>
       </div>
     </div>
   )
@@ -186,11 +221,13 @@ function ShortAnswerPanel({
   localText,
   setLocalText,
   onBlur,
+  onLockedClick,
 }: {
   locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
+  onLockedClick: () => void
 }) {
   return (
     <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0 px-[26px] py-[22px]">
@@ -198,12 +235,18 @@ function ShortAnswerPanel({
         type="text"
         className={cn(
           'w-full border-[1.5px] border-[#e4e6eb] bg-white rounded-[12px] px-[18px] py-[14px] text-[22px] font-semibold text-[#15171d] font-mono outline-none focus:border-accent transition-colors',
-          locked && 'opacity-60 cursor-not-allowed bg-[#fafafa]',
+          locked && 'opacity-60 bg-[#fafafa]',
         )}
         value={localText}
         onChange={(e) => setLocalText(e.target.value)}
         onBlur={onBlur}
         readOnly={locked}
+        onKeyDown={(e) => {
+          if (!locked) return
+          if (e.ctrlKey || e.metaKey) return
+          if (e.key.length !== 1 && !['Backspace', 'Delete', 'Enter'].includes(e.key)) return
+          onLockedClick()
+        }}
         placeholder="—"
       />
     </div>
@@ -217,12 +260,14 @@ function CodingPanel({
   localText,
   setLocalText,
   onBlur,
+  onLockedClick,
 }: {
   result: OcrResultResponse
   locked: boolean
   localText: string
   setLocalText: (v: string) => void
   onBlur: () => void
+  onLockedClick: () => void
 }) {
   const lang = result.problem_language ?? 'CPP'
   const fileName = `answer_${result.problem_label.toLowerCase()}.${LANG_EXT[lang] ?? 'txt'}`
@@ -241,27 +286,14 @@ function CodingPanel({
           </span>
         </div>
         {/* 에디터 */}
-        <div className="flex-1 flex font-mono text-[13.5px] leading-[2.05] overflow-hidden min-h-0">
-          <div className="py-[14px] px-[12px] text-right text-[#c2c6cd] bg-[#f6f7f9] border-r border-[#eef0f3] select-none flex-none min-w-[42px]">
-            {localText.split('\n').map((_, i) => <div key={i}>{i + 1}</div>)}
-          </div>
-          <textarea
-            className="flex-1 py-[14px] px-[15px] text-[#3a3e46] outline-none resize-none bg-[#fcfcfd] font-mono text-[13.5px] leading-[2.05] overflow-auto"
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <CodeEditor
             value={localText}
-            onChange={(e) => setLocalText(e.target.value)}
-            onBlur={onBlur}
+            onChange={locked ? undefined : setLocalText}
+            language={result.problem_language ?? null}
             readOnly={locked}
-            onKeyDown={(e) => {
-              if (e.key === 'Tab') {
-                e.preventDefault()
-                const el = e.currentTarget
-                const s = el.selectionStart
-                const next = localText.slice(0, s) + '    ' + localText.slice(el.selectionEnd)
-                setLocalText(next)
-                requestAnimationFrame(() => { el.selectionStart = s + 4; el.selectionEnd = s + 4 })
-              }
-            }}
-            placeholder="OCR 인식 코드가 없습니다"
+            onBlur={onBlur}
+            onAttemptEdit={locked ? onLockedClick : undefined}
           />
         </div>
       </div>
@@ -331,6 +363,8 @@ export default function Step5Page() {
 
   const [editMode, setEditMode] = useState(false)
   useEffect(() => { setEditMode(false) }, [selectedResult?.ocr_result_id])
+
+  const onLockedClick = useLockedToast()
 
   const confirmedCount = progress?.confirmed_student_count ?? 0
   const totalCount = progress?.total_student_count ?? 0
@@ -601,6 +635,7 @@ export default function Step5Page() {
                   locked={locked}
                   localChoice={localChoice}
                   onSaveChoice={saveChoice}
+                  onLockedClick={onLockedClick}
                 />
               )}
               {selectedResult.problem_type === 'SHORT_ANSWER' && (
@@ -609,14 +644,17 @@ export default function Step5Page() {
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
+                  onLockedClick={onLockedClick}
                 />
               )}
               {selectedResult.problem_type === 'DESCRIPTIVE' && (
                 <DescriptivePanel
+                  result={selectedResult}
                   locked={locked}
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
+                  onLockedClick={onLockedClick}
                 />
               )}
               {selectedResult.problem_type === 'CODING' && (
@@ -626,6 +664,7 @@ export default function Step5Page() {
                   localText={localText}
                   setLocalText={setLocalText}
                   onBlur={saveText}
+                  onLockedClick={onLockedClick}
                 />
               )}
             </div>

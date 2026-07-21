@@ -38,3 +38,18 @@
     background-clip: content-box;
   }
 }
+
+/* Monaco Editor: read-only 알림 컨테이너 완전히 숨김 */
+.monaco-editor .monaco-editor-overlaymessage {
+  display: none !important;
+}
+
+/* Monaco Editor: 라인 번호 왼쪽 여백 */
+.monaco-editor .line-numbers {
+  padding-left: 21px !important;
+}
+
+/* Monaco Editor: 코드 본문 왼쪽 여백 */
+.monaco-editor .view-lines {
+  padding-left: 15px !important;
+}
