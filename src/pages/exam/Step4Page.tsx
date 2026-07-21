@@ -278,146 +278,138 @@ export default function Step4Page() {
           {/* <LayoutToggle mode={layoutMode} onChange={setLayoutMode} /> */}
         </div>
 
-        {/* ── Toolbar ────────────────────────────────────────────────────── */}
-        <div className="px-[30px] py-[14px] border-b border-[#f0f1f4] flex items-center gap-[8px] flex-none">
-          {/* Draw tool: 사각형 */}
-          <button
-            type="button"
-            onClick={() => setDrawTool('rect')}
-            className={cn(
-              'flex items-center gap-[6px] h-[34px] px-[13px] rounded-[9px] text-[13px] font-semibold whitespace-nowrap border transition-colors',
-              drawTool === 'rect'
-                ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
-                : 'border-[#e2e4e9] bg-white text-[#5f636b] hover:bg-[#f7f8fa]',
-            )}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
-            </svg>
-            사각형
-          </button>
-
-          {/* Draw tool: 올가미 */}
-          <button
-            type="button"
-            onClick={() => setDrawTool('lasso')}
-            className={cn(
-              'flex items-center gap-[6px] h-[34px] px-[13px] rounded-[9px] text-[13px] font-semibold whitespace-nowrap border transition-colors',
-              drawTool === 'lasso'
-                ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
-                : 'border-[#e2e4e9] bg-white text-[#5f636b] hover:bg-[#f7f8fa]',
-            )}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 12c0-5 4-7 8-7s8 2 8 6-3 7-8 7c-3 0-3 3-5 3s-3-2-3-4 2-3 3-5z"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
-            </svg>
-            올가미
-          </button>
-
-          <div className="w-[1px] h-[22px] bg-[#eaecef] mx-[4px] flex-none" />
-
-          {/* Sheet selector */}
-          {sheets.length > 0 && (
-            <SheetSelect
-              sheets={sheets}
-              selectedIdx={selectedSheetIdx}
-              onChange={(idx) => { setSelectedSheetIdx(idx); setCurrentPage(1) }}
-            />
-          )}
-
-          {/* Problem selector */}
-          <ProblemSelect
-            problems={[...problems].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))}
-            activeProblemId={activeProblemId}
-            onChange={setActiveProblemId}
-            mappedLabels={new Set(mappingList.map(item => item.problemLabel))}
-          />
-
-          {/* Status badges — right side */}
-          <div className="ml-auto flex items-center gap-[8px]">
-            {isApplying && (
-              <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-amber-50 rounded-[9px] text-[12.5px] text-amber-600 font-semibold">
-                <svg
-                  className="animate-spin"
-                  width="14" height="14" viewBox="0 0 24 24" fill="none"
-                >
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="10" />
-                </svg>
-                전체 적용 중...
-              </span>
-            )}
-
-            {!isApplying && isFixedMode && isTemplateApplied && (
-              <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-accent/10 rounded-[9px] text-[12.5px] text-accent font-bold">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                첫 답안지 템플릿 적용됨 · 미세조정만
-              </span>
-            )}
-
-            {!isApplying && isFixedMode && canApplyTemplate && (
-              <button
-                type="button"
-                onClick={saveAndApplyTemplate}
-                disabled={isSavingTemplate}
-                className="flex items-center gap-[6px] h-[34px] px-[14px] bg-accent text-white text-[13px] font-bold rounded-[9px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                {isSavingTemplate ? '적용 중...' : '전체 답안지에 적용'}
-              </button>
-            )}
-
-            {!isApplying && isFixedMode && !isTemplateApplied && localRegionCount === 0 && sheets.length > 0 && (
-              <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-[#f1f2f5] rounded-[9px] text-[12.5px] text-[#9aa0ab] font-semibold">
-                캔버스에 영역을 그려 매핑하세요
-              </span>
-            )}
-          </div>
-        </div>
-
         {/* ── Body ───────────────────────────────────────────────────────── */}
         <div className="flex-1 flex min-h-0">
 
           {/* PDF Viewer */}
-          <div className="flex-[2.5] bg-[#eceef2] p-[24px] flex items-start justify-center min-w-0">
+          <div className="flex-[2.5] bg-[#eceef2] p-[24px] flex flex-col min-w-0">
+            {/* 툴바 */}
+            <div className="flex items-center gap-[8px] mb-[14px] flex-none">
+              {/* Draw tool: 사각형 */}
+              <button
+                type="button"
+                onClick={() => setDrawTool('rect')}
+                className={cn(
+                  'flex items-center gap-[6px] h-[34px] px-[13px] rounded-[9px] text-[13px] font-semibold whitespace-nowrap border transition-colors',
+                  drawTool === 'rect'
+                    ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
+                    : 'border-[#e2e4e9] bg-white text-[#5f636b] hover:bg-[#f7f8fa]',
+                )}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
+                사각형
+              </button>
+
+              {/* Draw tool: 올가미 */}
+              <button
+                type="button"
+                onClick={() => setDrawTool('lasso')}
+                className={cn(
+                  'flex items-center gap-[6px] h-[34px] px-[13px] rounded-[9px] text-[13px] font-semibold whitespace-nowrap border transition-colors',
+                  drawTool === 'lasso'
+                    ? 'border-accent bg-accent text-white shadow-[0_2px_6px_rgba(79,70,229,.4)]'
+                    : 'border-[#e2e4e9] bg-white text-[#5f636b] hover:bg-[#f7f8fa]',
+                )}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M4 12c0-5 4-7 8-7s8 2 8 6-3 7-8 7c-3 0-3 3-5 3s-3-2-3-4 2-3 3-5z"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+                올가미
+              </button>
+
+              <div className="w-[1px] h-[22px] bg-[#eaecef] mx-[4px] flex-none" />
+
+              {/* Sheet selector */}
+              {sheets.length > 0 && (
+                <SheetSelect
+                  sheets={sheets}
+                  selectedIdx={selectedSheetIdx}
+                  onChange={(idx) => { setSelectedSheetIdx(idx); setCurrentPage(1) }}
+                />
+              )}
+
+              {/* Problem selector */}
+              <ProblemSelect
+                problems={[...problems].sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }))}
+                activeProblemId={activeProblemId}
+                onChange={setActiveProblemId}
+                mappedLabels={new Set(mappingList.map(item => item.problemLabel))}
+              />
+
+              {/* Status badges — right side */}
+              <div className="ml-auto flex items-center gap-[8px]">
+                {isApplying && (
+                  <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-amber-50 rounded-[9px] text-[12.5px] text-amber-600 font-semibold">
+                    <svg
+                      className="animate-spin"
+                      width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    >
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="10" />
+                    </svg>
+                    전체 적용 중...
+                  </span>
+                )}
+
+                {!isApplying && isFixedMode && isTemplateApplied && (
+                  <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-accent/10 rounded-[9px] text-[12.5px] text-accent font-bold">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    첫 답안지 템플릿 적용됨
+                  </span>
+                )}
+
+                {!isApplying && isFixedMode && canApplyTemplate && (
+                  <button
+                    type="button"
+                    onClick={saveAndApplyTemplate}
+                    disabled={isSavingTemplate}
+                    className="flex items-center gap-[6px] h-[34px] px-[14px] bg-accent text-white text-[13px] font-bold rounded-[9px] shadow-[0_4px_12px_rgba(79,70,229,.3)] hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {isSavingTemplate ? '적용 중...' : '전체 답안지에 적용'}
+                  </button>
+                )}
+
+                {!isApplying && isFixedMode && !isTemplateApplied && localRegionCount === 0 && sheets.length > 0 && (
+                  <span className="flex items-center gap-[6px] h-[32px] px-[12px] bg-[#f1f2f5] rounded-[9px] text-[12.5px] text-[#9aa0ab] font-semibold">
+                    캔버스에 영역을 그려 매핑하세요
+                  </span>
+                )}
+              </div>
+            </div>
+
             {sheets.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full gap-[10px]">
-                <div className="w-[48px] h-[48px] rounded-[13px] bg-white/60 flex items-center justify-center">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <rect x="4" y="3" width="12" height="16" rx="2" stroke="#9aa0ab" strokeWidth="1.6" />
-                    <path d="M16 3l4 4" stroke="#9aa0ab" strokeWidth="1.6" strokeLinecap="round" />
-                    <path d="M16 3v4h4" stroke="#9aa0ab" strokeWidth="1.6" strokeLinecap="round" />
-                  </svg>
+              <div className="flex-1 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-[10px]">
+                  <div className="w-[48px] h-[48px] rounded-[13px] bg-white/60 flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <rect x="4" y="3" width="12" height="16" rx="2" stroke="#9aa0ab" strokeWidth="1.6" />
+                      <path d="M16 3l4 4" stroke="#9aa0ab" strokeWidth="1.6" strokeLinecap="round" />
+                      <path d="M16 3v4h4" stroke="#9aa0ab" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <p className="text-[13.5px] text-[#71757e] text-center">
+                    3단계에서 답안지를 먼저 업로드하세요
+                  </p>
                 </div>
-                <p className="text-[13.5px] text-[#71757e] text-center">
-                  3단계에서 답안지를 먼저 업로드하세요
-                </p>
               </div>
             ) : (
-              <div className="w-full h-full flex flex-col min-h-0">
-                {/* Selected sheet label */}
-                {selectedSheet && (
-                  <div className="flex-none mb-[10px] text-[11px] font-semibold text-[#9aa0ab] font-mono tracking-[.04em]">
-                    {selectedSheet.student_no
-                      ? `${selectedSheet.student_no} · ${selectedSheet.student_name ?? ''}`
-                      : `답안지 ${selectedSheetIdx + 1}`}
-                  </div>
-                )}
-                <div className="flex-1 min-h-0">
-                  <PdfCanvas
-                    url={pdfUrl}
-                    pageWidth={840}
-                    regions={overlays}
-                    drawMode={drawTool}
-                    onDrawComplete={handleDrawComplete}
-                    currentPage={currentPage}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
+              <div className="flex-1 min-h-0">
+                <PdfCanvas
+                  url={pdfUrl}
+                  pageWidth={840}
+                  regions={overlays}
+                  drawMode={drawTool}
+                  onDrawComplete={handleDrawComplete}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                />
               </div>
             )}
           </div>

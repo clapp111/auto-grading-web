@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone'
 import { ChevronDown, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
+import { CodeEditor } from './CodeEditor'
 import { useProblems } from '../../hooks/exam/useProblems'
 import { useModelAnswerOcr } from '../../hooks/exam/useModelAnswerOcr'
 import { TYPE_COLORS, TYPE_LABELS_KO, OCR_REQUIRED_TYPES } from '../../types/constants'
@@ -251,7 +252,7 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
           {/* 코드 에디터 영역 */}
           <div className="flex-1 mx-4 mb-4 border border-[#e6e8ec] rounded-[12px] overflow-hidden flex flex-col min-h-0">
             {/* Mac titlebar */}
-            <div className="flex items-center gap-[7px] px-[14px] py-[10px] bg-[#fafbfc] border-b border-[#eef0f3] flex-none">
+            <div className="flex items-center gap-[7px] px-[14px] h-[42px] bg-[#fafbfc] border-b border-[#eef0f3] flex-none">
               <span className="w-[11px] h-[11px] rounded-full bg-[#f0625c]" />
               <span className="w-[11px] h-[11px] rounded-full bg-[#f5bb42]" />
               <span className="w-[11px] h-[11px] rounded-full bg-[#5fc274]" />
@@ -279,43 +280,60 @@ export function SubStep2({ examId, initialModelAnswerUrl, onNext, onBack }: SubS
             </div>
 
             {tabAnswer?.model_answer_text != null ? (
-              <div className="flex-1 flex font-mono text-[13px] leading-[2.05] overflow-hidden min-h-0">
-                {/* 라인 번호 */}
-                <div className="py-[14px] px-[12px] text-right text-[#c2c6cd] bg-[#f6f7f9] border-r border-[#eef0f3] select-none flex-none min-w-[42px] overflow-hidden">
-                  {localText.split('\n').map((_, i) => (
-                    <div key={i}>{i + 1}</div>
-                  ))}
+              tabProblem?.type === 'CODING' ? (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <CodeEditor
+                    value={localText}
+                    onChange={setLocalText}
+                    language={tabLang}
+                    onBlur={() => {
+                      if (tabProblem && localText !== (tabAnswer?.model_answer_text ?? '')) {
+                        updateModelAnswer({
+                          problemId: tabProblem.problem_id,
+                          body: { model_answer_text: localText },
+                        })
+                      }
+                    }}
+                  />
                 </div>
-                {/* 편집 가능한 텍스트 — blur 시에만 저장 */}
-                <textarea
-                  className="flex-1 py-[14px] px-[15px] text-[#3a3e46] outline-none resize-none bg-[#fcfcfd] font-mono text-[13px] leading-[2.05] overflow-auto"
-                  value={localText}
-                  onChange={e => setLocalText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Tab') {
-                      e.preventDefault()
-                      const el = e.currentTarget
-                      const start = el.selectionStart
-                      const end = el.selectionEnd
-                      const tab = '    '
-                      const next = localText.slice(0, start) + tab + localText.slice(end)
-                      setLocalText(next)
-                      requestAnimationFrame(() => {
-                        el.selectionStart = start + tab.length
-                        el.selectionEnd = start + tab.length
-                      })
-                    }
-                  }}
-                  onBlur={() => {
-                    if (tabProblem && localText !== (tabAnswer?.model_answer_text ?? '')) {
-                      updateModelAnswer({
-                        problemId: tabProblem.problem_id,
-                        body: { model_answer_text: localText },
-                      })
-                    }
-                  }}
-                />
-              </div>
+              ) : (
+                <div className="flex-1 flex font-mono text-[13px] leading-[2.05] overflow-hidden min-h-0">
+                  {/* 라인 번호 */}
+                  <div className="py-[14px] px-[12px] text-right text-[#c2c6cd] bg-[#f6f7f9] border-r border-[#eef0f3] select-none flex-none min-w-[42px] overflow-hidden">
+                    {localText.split('\n').map((_, i) => (
+                      <div key={i}>{i + 1}</div>
+                    ))}
+                  </div>
+                  <textarea
+                    className="flex-1 py-[14px] px-[15px] text-[#3a3e46] outline-none resize-none bg-[#fcfcfd] font-mono text-[13px] leading-[2.05] overflow-auto"
+                    value={localText}
+                    onChange={e => setLocalText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Tab') {
+                        e.preventDefault()
+                        const el = e.currentTarget
+                        const start = el.selectionStart
+                        const end = el.selectionEnd
+                        const tab = '    '
+                        const next = localText.slice(0, start) + tab + localText.slice(end)
+                        setLocalText(next)
+                        requestAnimationFrame(() => {
+                          el.selectionStart = start + tab.length
+                          el.selectionEnd = start + tab.length
+                        })
+                      }
+                    }}
+                    onBlur={() => {
+                      if (tabProblem && localText !== (tabAnswer?.model_answer_text ?? '')) {
+                        updateModelAnswer({
+                          problemId: tabProblem.problem_id,
+                          body: { model_answer_text: localText },
+                        })
+                      }
+                    }}
+                  />
+                </div>
+              )
             ) : (
               <div className="flex-1 flex items-center justify-center text-[13px] text-[#9aa0ab] bg-[#fcfcfd] text-center px-6">
                 {ocrProblems.length === 0

@@ -5,13 +5,14 @@ import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
 import { PdfCanvas, type RegionOverlay } from '@/components/exam/PdfCanvas'
+import { CodeEditor } from '@/components/exam/CodeEditor'
 import { useStep6, type ProblemRow } from '@/hooks/exam/useStep6'
 import { examsApi } from '@/api/exams'
 import { type GradeUpdateRequest } from '@/api/grading'
 import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/types/constants'
 import { cn } from '@/lib/utils'
 import type { GradeResponse, ModelAnswerResponse, AnswerRegionResponse, AnswerSheetResponse } from '@/types/dto'
-import type { ProblemType } from '@/types/enums'
+import type { ProblemType, ProgrammingLanguage } from '@/types/enums'
 
 // ── 채점 방식 레이블 ─────────────────────────────────────────────────────
 const GRADE_MODE_LABELS: Record<ProblemType, string> = {
@@ -575,6 +576,7 @@ function RubricBreakdownItem({
 
 function LlmGradeDetailView({
   problem,
+  language,
   grades,
   isGradesLoading,
   isGrading,
@@ -593,6 +595,7 @@ function LlmGradeDetailView({
   onBack,
 }: {
   problem: ProblemRow
+  language: ProgrammingLanguage | null
   grades: GradeResponse[]
   isGradesLoading: boolean
   isGrading: boolean
@@ -777,13 +780,25 @@ function LlmGradeDetailView({
           <div className="flex-1 border-r border-[#f0f1f4] flex flex-col min-w-0 min-h-0">
             <div className="px-[24px] py-[18px] pb-[10px] text-[14.5px] font-bold text-[#15171d] flex-none">
               학생 답안{' '}
-              <span className="text-[13px] font-medium text-[#9aa0ab]">{problem.label} 서술형</span>
+              <span className="text-[13px] font-medium text-[#9aa0ab]">
+                {problem.label} {problem.type === 'CODING' ? '손코딩' : '서술형'}
+              </span>
             </div>
-            <div className="flex-1 mx-[24px] mb-[18px] border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] p-[15px_16px] text-[14px] text-[#3a3e36] leading-[1.85] overflow-y-auto min-h-0 font-sans whitespace-pre-wrap">
-              {selectedGrade.ocr_text ?? (
-                <span className="text-[#c2c6cd] italic">OCR 인식 텍스트가 없습니다</span>
-              )}
-            </div>
+            {problem.type === 'CODING' ? (
+              <div className="flex-1 mx-[24px] mb-[18px] border border-[#e6e8ec] rounded-[11px] overflow-hidden min-h-0">
+                <CodeEditor
+                  value={selectedGrade.ocr_text ?? ''}
+                  language={language}
+                  readOnly
+                />
+              </div>
+            ) : (
+              <div className="flex-1 mx-[24px] mb-[18px] border border-[#e6e8ec] rounded-[11px] bg-[#fcfcfd] p-[15px_16px] text-[14px] text-[#3a3e36] leading-[1.85] overflow-y-auto min-h-0 font-sans whitespace-pre-wrap">
+                {selectedGrade.ocr_text ?? (
+                  <span className="text-[#c2c6cd] italic">OCR 인식 텍스트가 없습니다</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right: 채점 패널 */}
@@ -970,6 +985,7 @@ export default function Step6Page() {
     deleteGrades,
     isDeletingGrades,
     selectedModelAnswer,
+    selectedProblemLanguage,
     selectedSheetPdfUrl,
     selectedSheetRegions,
   } = useStep6(examId)
@@ -1019,6 +1035,7 @@ export default function Step6Page() {
       ) : selectedProblem ? (
         <LlmGradeDetailView
           problem={selectedProblem}
+          language={selectedProblemLanguage}
           grades={grades}
           isGradesLoading={isGradesLoading}
           isGrading={isGrading}

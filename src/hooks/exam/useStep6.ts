@@ -13,7 +13,7 @@ import type {
   AnswerRegionResponse,
   AnswerSheetResponse,
 } from '@/types/dto'
-import type { ProblemType } from '@/types/enums'
+import type { ProblemType, ProgrammingLanguage } from '@/types/enums'
 
 const AUTO_TYPES: ProblemType[] = ['MULTIPLE_CHOICE', 'SHORT_ANSWER']
 
@@ -222,6 +222,16 @@ export function useStep6(examId: number) {
       ? (grades.find((g) => g.student_id === selectedSheet.student_id) ?? null)
       : null
 
+  // ── 문제 목록 (language 조회용) ──────────────────────────────────────
+  const { data: problemsList = [] } = useQuery({
+    queryKey: ['problems', examId],
+    queryFn: () => problemsApi.list(examId).then((r) => r.data ?? []),
+    enabled: !!examId,
+  })
+
+  const selectedProblemLanguage: ProgrammingLanguage | null =
+    problemsList.find((p) => p.problem_id === selectedProblem?.problem_id)?.language ?? null
+
   // ── 답안지 PDF & 영역 (AUTO 뷰용) ────────────────────────────────────
   const isAutoView =
     !!selectedProblem && AUTO_TYPES.includes(selectedProblem.type) && view === 'detail'
@@ -290,6 +300,7 @@ export function useStep6(examId: number) {
     isDeletingGrades: deleteGradesMutation.isPending,
     // 공통
     selectedModelAnswer,
+    selectedProblemLanguage,
     selectedSheetPdfUrl: sheetDownloadRes?.url ?? null,
     selectedSheetRegions,
   }

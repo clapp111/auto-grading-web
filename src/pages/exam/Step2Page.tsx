@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Sparkles, Trash2, RefreshCw } from 'lucide-react'
 import { ExamSidebar } from '@/components/common/ExamSidebar'
+import { CodeEditor } from '@/components/exam/CodeEditor'
 import { useRubric } from '@/hooks/exam/useRubric'
 import { examsApi } from '@/api/exams'
 import { problemsApi, type RubricUpdateRequest } from '@/api/problems'
@@ -133,9 +134,19 @@ function RubricPanel({
               모범답안
             </p>
             {modelAnswer?.model_answer_text ? (
-              <p className="text-[13px] text-[#4b4f57] leading-[1.75] whitespace-pre-wrap font-mono bg-[#f7f8fa] border border-[#eef0f3] rounded-[10px] p-[12px_14px]">
-                {modelAnswer.model_answer_text}
-              </p>
+              problem.type === 'CODING' ? (
+                <div className="border border-[#e6e8ec] rounded-[11px] overflow-hidden h-[300px]">
+                  <CodeEditor
+                    value={modelAnswer.model_answer_text}
+                    language={problem.language}
+                    readOnly
+                  />
+                </div>
+              ) : (
+                <p className="text-[13px] text-[#4b4f57] leading-[1.75] whitespace-pre-wrap font-mono bg-[#f7f8fa] border border-[#eef0f3] rounded-[10px] p-[12px_14px]">
+                  {modelAnswer.model_answer_text}
+                </p>
+              )
             ) : (
               <p className="text-[13px] text-[#b0b4bc] italic">
                 모범답안 OCR이 아직 완료되지 않았습니다
