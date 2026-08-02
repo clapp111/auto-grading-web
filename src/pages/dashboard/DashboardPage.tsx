@@ -14,13 +14,18 @@ import {
   Clock,
   X,
   Trash2,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { authApi } from "@/api/auth";
 import { examsApi } from "@/api/exams";
-import type { ExamResponse } from "@/types/dto";
-import type { ExamStep } from "@/types/enums";
+import {
+  useExamInvitations,
+  useExamMembers,
+} from "@/hooks/exam/useInvitations";
+import type { ExamResponse, ExamMemberResponse } from "@/types/dto";
+import type { ExamStep, InvitationStatus } from "@/types/enums";
 
 import { cn } from "@/lib/utils";
 
@@ -138,7 +143,6 @@ function CreateExamModal({
   open: boolean;
   onClose: () => void;
 }) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const {
     register,
@@ -160,7 +164,6 @@ function CreateExamModal({
         toast.success("시험이 생성되었습니다.");
         reset();
         onClose();
-        navigate(`/exam/${res.data.exam_id}/step/1`);
       }
     },
     onError: () => toast.error("시험 생성에 실패했습니다."),
@@ -257,6 +260,318 @@ function CreateExamModal({
   );
 }
 
+// ── Invite Modal ───────────────────────────────────────────────────────────
+const inviteSchema = z.object({
+  email: z
+    .string()
+    .min(1, "이메일을 입력하세요")
+    .email("올바른 이메일 형식이 아닙니다"),
+});
+type InviteForm = z.infer<typeof inviteSchema>;
+
+const INVITE_STATUS_CFG: Record<
+  InvitationStatus,
+  { label: string; cls: string }
+> = {
+  PENDING: { label: "대기 중", cls: "bg-[#eef0f3] text-[#8a8f99]" },
+  ACCEPTED: { label: "수락됨", cls: "bg-[#e7f6ee] text-[#138a5a]" },
+  DECLINED: { label: "거절됨", cls: "bg-[#f0f1f4] text-[#9aa0ab]" },
+  CANCELED: { label: "취소됨", cls: "bg-[#f0f1f4] text-[#9aa0ab]" },
+};
+
+function InviteModal({
+  exam,
+  onClose,
+}: {
+  exam: ExamResponse;
+  onClose: () => void;
+}) {
+  const { invitations, create, creating, cancel } = useExamInvitations(
+    exam.exam_id,
+  );
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<InviteForm>({ resolver: zodResolver(inviteSchema) });
+
+  const onSubmit = async (data: InviteForm) => {
+    try {
+      await create({ email: data.email });
+      reset();
+    } catch {
+      // 오류 안내는 훅에서 토스트로 처리
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        className="w-[480px] bg-white rounded-[18px] shadow-[0_24px_60px_rgba(13,16,28,.34)] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between px-[26px] pt-[24px]">
+          <div className="min-w-0">
+            <p className="text-[20px] font-extrabold text-[#15171d] tracking-[-0.02em]">
+              공동 채점자 초대
+            </p>
+            <p className="text-[13.5px] text-[#71757e] mt-1 truncate">
+              {exam.name}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-[32px] h-[32px] rounded-[8px] bg-[#f4f5f7] flex items-center justify-center text-[#9aa0ab] hover:bg-[#ebedf1] transition-colors flex-none"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="px-[26px] pt-[22px]">
+          <label className="block text-[13.5px] font-semibold text-[#3a3e46] mb-[7px]">
+            이메일
+          </label>
+          <div className="flex gap-[10px]">
+            <input
+              type="email"
+              placeholder="초대할 사용자의 이메일"
+              autoFocus
+              {...register("email")}
+              className={cn(
+                "flex-1 h-[46px] border-[1.5px] rounded-[11px] bg-[#fbfbfc] px-[14px] text-[14.5px] text-[#15171d]",
+                "outline-none focus:border-accent transition-colors placeholder:text-[#aab0ba]",
+                errors.email ? "border-red-400" : "border-[#e0e3e9]",
+              )}
+            />
+            <button
+              type="submit"
+              disabled={creating}
+              className="h-[46px] px-[20px] bg-accent text-white text-[14.5px] font-bold rounded-[11px] shadow-[0_4px_12px_rgba(79,70,229,.25)] disabled:opacity-60 transition-opacity flex-none"
+            >
+              초대
+            </button>
+          </div>
+          {errors.email && (
+            <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>
+          )}
+        </form>
+
+        <div className="px-[26px] pt-[20px] pb-[24px]">
+          <p className="text-[12.5px] font-semibold text-[#9aa0ab] mb-[10px]">
+            보낸 초대
+          </p>
+          {invitations.length === 0 ? (
+            <p className="text-[13.5px] text-[#aab0ba] py-[14px] text-center">
+              아직 보낸 초대가 없습니다.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-[8px] max-h-[240px] overflow-y-auto">
+              {invitations.map((inv) => {
+                const cfg = INVITE_STATUS_CFG[inv.status];
+                return (
+                  <div
+                    key={inv.invitation_id}
+                    className="flex items-center gap-[10px] py-[8px] px-[12px] rounded-[10px] bg-[#fafbfc] border border-[#f0f1f4]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13.5px] font-semibold text-[#15171d] truncate">
+                        {inv.invitee_name}
+                      </p>
+                      <p className="text-[12.5px] text-[#9aa0ab] truncate">
+                        {inv.invitee_email}
+                      </p>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[11.5px] font-bold px-[9px] py-[3px] rounded-[20px] flex-none",
+                        cfg.cls,
+                      )}
+                    >
+                      {cfg.label}
+                    </span>
+                    {inv.status === "PENDING" && (
+                      <button
+                        onClick={() => cancel(inv.invitation_id)}
+                        className="text-[12.5px] text-[#c0392b] font-semibold hover:underline flex-none"
+                      >
+                        취소
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Members Modal ──────────────────────────────────────────────────────────
+function MembersModal({
+  exam,
+  onClose,
+}: {
+  exam: ExamResponse;
+  onClose: () => void;
+}) {
+  const { members, isLoading, remove } = useExamMembers(exam.exam_id);
+  const [confirmTarget, setConfirmTarget] = useState<ExamMemberResponse | null>(
+    null,
+  );
+  const myMemberId = useAuthStore((s) => s.member?.member_id);
+  // 현재 사용자가 이 시험의 소유자인지
+  const iAmOwner = members.some(
+    (m) => m.member_id === myMemberId && m.is_owner,
+  );
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      >
+        <div
+          className="w-[480px] bg-white rounded-[18px] shadow-[0_24px_60px_rgba(13,16,28,.34)] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start justify-between px-[26px] pt-[24px]">
+            <div className="min-w-0">
+              <p className="text-[20px] font-extrabold text-[#15171d] tracking-[-0.02em]">
+                채점자
+              </p>
+              <p className="text-[13.5px] text-[#71757e] mt-1 truncate">
+                {exam.name}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-[32px] h-[32px] rounded-[8px] bg-[#f4f5f7] flex items-center justify-center text-[#9aa0ab] hover:bg-[#ebedf1] transition-colors flex-none"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="px-[26px] pt-[22px] pb-[24px]">
+            {isLoading ? (
+              <p className="text-[13.5px] text-[#aab0ba] py-[14px] text-center">
+                불러오는 중...
+              </p>
+            ) : (
+              <div className="flex flex-col gap-[8px] max-h-[300px] overflow-y-auto">
+                {members.map((m) => (
+                  <div
+                    key={m.member_id}
+                    className="flex items-center gap-[10px] py-[8px] px-[12px] rounded-[10px] bg-[#fafbfc] border border-[#f0f1f4]"
+                  >
+                    <div className="w-[30px] h-[30px] rounded-full bg-[#eceef2] flex items-center justify-center text-[12px] font-semibold text-[#71757e] flex-none">
+                      {m.name[0]}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13.5px] font-semibold text-[#15171d] truncate">
+                        {m.name}
+                      </p>
+                      <p className="text-[12.5px] text-[#9aa0ab] truncate">
+                        {m.email}
+                      </p>
+                    </div>
+                    {(() => {
+                      const isMe = m.member_id === myMemberId;
+                      // 본인이면서 소유자가 아님 → 나가기
+                      if (isMe && !iAmOwner) {
+                        return (
+                          <button
+                            onClick={() => setConfirmTarget(m)}
+                            className="text-[12.5px] text-[#c0392b] font-semibold hover:underline flex-none"
+                          >
+                            나가기
+                          </button>
+                        );
+                      }
+                      // 내가 소유자이고 상대가 다른 사람 → 내보내기
+                      if (iAmOwner && !isMe) {
+                        return (
+                          <button
+                            onClick={() => setConfirmTarget(m)}
+                            className="text-[12.5px] text-[#c0392b] font-semibold hover:underline flex-none"
+                          >
+                            내보내기
+                          </button>
+                        );
+                      }
+                      // 소유자 표시 (그 외에는 아무 액션 없음)
+                      if (m.is_owner) {
+                        return (
+                          <span className="text-[11.5px] font-bold px-[9px] py-[3px] rounded-[20px] bg-accent/[.1] text-accent flex-none">
+                            소유자
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {confirmTarget && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px]"
+          onClick={() => setConfirmTarget(null)}
+        >
+          <div
+            className="w-[360px] bg-white rounded-[16px] shadow-[0_24px_60px_rgba(13,16,28,.34)] p-[24px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-extrabold text-[#15171d] tracking-[-0.02em]">
+              {confirmTarget.member_id === myMemberId
+                ? "시험 나가기"
+                : "채점자 내보내기"}
+            </p>
+            <p className="text-[13.5px] text-[#71757e] leading-[1.55] mt-[8px]">
+              {confirmTarget.member_id === myMemberId ? (
+                "이 시험의 채점에서 나가시겠어요?"
+              ) : (
+                <>
+                  <span className="font-semibold text-[#3a3e46]">
+                    {confirmTarget.name}
+                  </span>
+                  님을 이 시험의 채점자에서 내보낼까요?
+                </>
+              )}
+            </p>
+            <div className="flex justify-end gap-[10px] mt-[20px]">
+              <button
+                onClick={() => setConfirmTarget(null)}
+                className="h-[40px] px-[16px] border border-[#e0e3e9] bg-white rounded-[10px] text-[14px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => {
+                  remove(confirmTarget.member_id);
+                  setConfirmTarget(null);
+                }}
+                className="h-[40px] px-[18px] bg-[#c0392b] text-white rounded-[10px] text-[14px] font-bold hover:opacity-90 transition-opacity"
+              >
+                {confirmTarget.member_id === myMemberId ? "나가기" : "내보내기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Exam Card ──────────────────────────────────────────────────────────────
 function ExamCard({
   exam,
@@ -266,7 +581,11 @@ function ExamCard({
   onDelete: (id: number) => void;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [isEntering, setIsEntering] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const cfg = STATUS_CFG[exam.step as ExamStep];
@@ -286,88 +605,148 @@ function ExamCard({
     return () => document.removeEventListener("mousedown", h);
   }, [menuOpen]);
 
+  const enterExam = async () => {
+    if (isEntering) return;
+
+    if (exam.step !== 0) {
+      navigate(`/exam/${exam.exam_id}/step/${exam.step}`);
+      return;
+    }
+
+    setIsEntering(true);
+    try {
+      await examsApi.advance(exam.exam_id, 0);
+      await queryClient.invalidateQueries({ queryKey: ["exams"] });
+      navigate(`/exam/${exam.exam_id}/step/1`);
+    } catch {
+      toast.error("시험을 시작하지 못했습니다.");
+    } finally {
+      setIsEntering(false);
+    }
+  };
+
   return (
-    <div
-      className="bg-white border border-[#ebedf1] rounded-[14px] p-[20px_20px_17px] flex flex-col cursor-pointer hover:shadow-[0_10px_24px_rgba(20,24,40,.10)] hover:border-[#dfe2e8] transition-all"
-      onClick={() =>
-        navigate(`/exam/${exam.exam_id}/step/${Math.max(exam.step, 1)}`)
-      }
-    >
-      <div className="flex items-start justify-between mb-[11px]">
-        <span
-          className={cn(
-            "text-[12px] font-bold px-[11px] py-[4px] rounded-[20px]",
-            cfg.chipCls,
-          )}
-        >
-          {cfg.label}
-        </span>
-        <div className="relative">
-          <button
-            ref={menuBtnRef}
-            type="button"
-            className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors p-1 -m-1 rounded"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((p) => !p);
-            }}
-          >
-            <MoreHorizontal size={18} />
-          </button>
-          {menuOpen && (
-            <div
-              ref={menuRef}
-              className="absolute right-0 top-[calc(100%+4px)] bg-white border border-[#e0e3e9] rounded-[10px] shadow-lg py-[5px] w-[110px] z-10"
-              onClick={(e) => e.stopPropagation()}
+    <>
+      <div
+        className="bg-white border border-[#ebedf1] rounded-[14px] p-[20px_20px_17px] flex flex-col cursor-pointer hover:shadow-[0_10px_24px_rgba(20,24,40,.10)] hover:border-[#dfe2e8] transition-all"
+        onClick={enterExam}
+      >
+        <div className="flex items-start justify-between mb-[11px]">
+          <div className="flex items-center gap-[7px]">
+            <span
+              className={cn(
+                "text-[12px] font-bold px-[11px] py-[4px] rounded-[20px]",
+                cfg.chipCls,
+              )}
             >
-              <button
-                className="w-full px-3 py-[9px] text-left text-[13px] text-[#c0392b] hover:bg-red-50 flex items-center gap-2"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onDelete(exam.exam_id);
-                }}
+              {cfg.label}
+            </span>
+            {!exam.is_owner && (
+              <>
+                <span className="text-[#8a8f99]">•</span>
+                <span className="text-[12px] font-bold px-[11px] py-[4px] rounded-[20px] bg-[#eef0f3] text-[#8a8f99]">
+                  공유됨
+                </span>
+              </>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              ref={menuBtnRef}
+              type="button"
+              className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors p-1 -m-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((p) => !p);
+              }}
+            >
+              <MoreHorizontal size={18} />
+            </button>
+            {menuOpen && (
+              <div
+                ref={menuRef}
+                className="absolute right-0 top-[calc(100%+4px)] bg-white border border-[#e0e3e9] rounded-[10px] shadow-lg py-[5px] w-[110px] z-10"
+                onClick={(e) => e.stopPropagation()}
               >
-                <Trash2 size={13} />
-                삭제
-              </button>
-            </div>
-          )}
+                {exam.is_owner && (
+                  <button
+                    className="w-full px-3 py-[9px] text-left text-[13px] text-[#3a3e46] hover:bg-[#f7f8fa] flex items-center gap-2"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setInviteOpen(true);
+                    }}
+                  >
+                    <UserPlus size={13} />
+                    초대
+                  </button>
+                )}
+                <button
+                  className="w-full px-3 py-[9px] text-left text-[13px] text-[#3a3e46] hover:bg-[#f7f8fa] flex items-center gap-2"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setMembersOpen(true);
+                  }}
+                >
+                  <Users size={13} />
+                  채점자
+                </button>
+                {exam.is_owner && (
+                  <button
+                    className="w-full px-3 py-[9px] text-left text-[13px] text-[#c0392b] hover:bg-red-50 flex items-center gap-2"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete(exam.exam_id);
+                    }}
+                  >
+                    <Trash2 size={13} />
+                    삭제
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p className="text-[18px] font-bold text-[#15171d] tracking-[-0.02em] mb-[5px] line-clamp-1">
+          {exam.name}
+        </p>
+        <p className="text-[13.5px] text-[#71757e] leading-[1.5] mb-[18px] min-h-[40px] line-clamp-2">
+          {exam.description ?? "설명 없음"}
+        </p>
+
+        <div className="flex items-center justify-between mb-[7px]">
+          <span className="text-[12.5px] text-[#9aa0ab] font-medium">
+            {cfg.progLabel}
+          </span>
+          <span className="text-[12.5px] font-bold" style={{ color: pctColor }}>
+            {cfg.pct}%
+          </span>
+        </div>
+        <div className="h-[7px] rounded-[5px] bg-[#eef0f3] overflow-hidden mb-[15px]">
+          <div
+            className="h-full rounded-[5px]"
+            style={{ width: `${cfg.pct}%`, backgroundColor: cfg.barColor }}
+          />
+        </div>
+
+        <div className="flex items-center gap-[14px] pt-[13px] border-t border-[#f0f1f4]">
+          <span className="flex items-center gap-[5px] text-[12.5px] text-[#71757e]">
+            <Users size={14} />
+            {exam.student_count}명
+          </span>
+          <span className="flex items-center gap-[5px] text-[12.5px] text-[#9aa0ab] ml-auto">
+            <Clock size={13} />
+            {formatRelativeTime(exam.updated_at ?? exam.created_at)}
+          </span>
         </div>
       </div>
-
-      <p className="text-[18px] font-bold text-[#15171d] tracking-[-0.02em] mb-[5px] line-clamp-1">
-        {exam.name}
-      </p>
-      <p className="text-[13.5px] text-[#71757e] leading-[1.5] mb-[18px] min-h-[40px] line-clamp-2">
-        {exam.description ?? "설명 없음"}
-      </p>
-
-      <div className="flex items-center justify-between mb-[7px]">
-        <span className="text-[12.5px] text-[#9aa0ab] font-medium">
-          {cfg.progLabel}
-        </span>
-        <span className="text-[12.5px] font-bold" style={{ color: pctColor }}>
-          {cfg.pct}%
-        </span>
-      </div>
-      <div className="h-[7px] rounded-[5px] bg-[#eef0f3] overflow-hidden mb-[15px]">
-        <div
-          className="h-full rounded-[5px]"
-          style={{ width: `${cfg.pct}%`, backgroundColor: cfg.barColor }}
-        />
-      </div>
-
-      <div className="flex items-center gap-[14px] pt-[13px] border-t border-[#f0f1f4]">
-        <span className="flex items-center gap-[5px] text-[12.5px] text-[#71757e]">
-          <Users size={14} />
-          {exam.student_count}명
-        </span>
-        <span className="flex items-center gap-[5px] text-[12.5px] text-[#9aa0ab] ml-auto">
-          <Clock size={13} />
-          {formatRelativeTime(exam.updated_at ?? exam.created_at)}
-        </span>
-      </div>
-    </div>
+      {inviteOpen && (
+        <InviteModal exam={exam} onClose={() => setInviteOpen(false)} />
+      )}
+      {membersOpen && (
+        <MembersModal exam={exam} onClose={() => setMembersOpen(false)} />
+      )}
+    </>
   );
 }
 
