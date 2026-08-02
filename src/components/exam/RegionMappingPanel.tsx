@@ -1,20 +1,20 @@
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2 } from "lucide-react";
 
 export interface MappingItem {
-  key: string
-  index: number
-  problemLabel: string
-  color: string       // TYPE_COLORS — 배경 틴트, 점
-  textColor: string   // TYPE_TEXT_COLORS — 라벨 텍스트
-  serverId: number | null
-  tempId: string | null
-  isPending?: boolean  // true: 서버 저장 응답 대기 중
+  key: string;
+  index: number;
+  problemLabel: string;
+  color: string; // TYPE_COLORS — 배경 틴트, 점
+  textColor: string; // TYPE_TEXT_COLORS — 라벨 텍스트
+  serverId: number | null;
+  tempId: string | null;
+  isPending?: boolean; // true: 서버 저장 응답 대기 중
 }
 
 interface SheetThumbProps {
-  idx: number
-  isActive: boolean
-  onClick: () => void
+  idx: number;
+  isActive: boolean;
+  onClick: () => void;
 }
 
 function SheetThumb({ idx, isActive, onClick }: SheetThumbProps) {
@@ -27,26 +27,26 @@ function SheetThumb({ idx, isActive, onClick }: SheetThumbProps) {
       style={
         isActive
           ? {
-              background: '#4F46E5' + '12',
-              border: '2px solid #4F46E5',
+              background: "#4F46E5" + "12",
+              border: "2px solid #4F46E5",
             }
           : {
-              background: 'linear-gradient(160deg,#f4f5f7,#e9ebef)',
-              border: '1px solid #e2e4e9',
+              background: "linear-gradient(160deg,#f4f5f7,#e9ebef)",
+              border: "1px solid #e2e4e9",
             }
       }
     />
-  )
+  );
 }
 
 interface RegionMappingPanelProps {
-  mappingList: MappingItem[]
-  sheets: { answer_sheet_id: number }[]
-  selectedSheetIdx: number
-  onSelectSheet: (idx: number) => void
-  onDeleteServer: (id: number) => void
-  onDeleteLocal: (tempId: string) => void
-  isFineTuneMode: boolean
+  mappingList: MappingItem[];
+  sheets: { answer_sheet_id: number }[];
+  selectedSheetIdx: number;
+  onSelectSheet: (idx: number) => void;
+  onDeleteServer: (id: number) => void;
+  onDeleteLocal: (tempId: string) => void;
+  isFineTuneMode: boolean;
 }
 
 export function RegionMappingPanel({
@@ -60,11 +60,11 @@ export function RegionMappingPanel({
 }: RegionMappingPanelProps) {
   const handleDelete = (item: MappingItem) => {
     if (item.serverId !== null) {
-      onDeleteServer(item.serverId)
+      onDeleteServer(item.serverId);
     } else if (item.tempId !== null) {
-      onDeleteLocal(item.tempId)
+      onDeleteLocal(item.tempId);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -79,17 +79,24 @@ export function RegionMappingPanel({
           <div className="flex flex-col items-center justify-center h-full gap-[8px] text-center">
             <div
               className="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center"
-              style={{ background: '#f0f1f4' }}
+              style={{ background: "#f0f1f4" }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <rect
-                  x="4" y="4" width="16" height="16" rx="2"
-                  stroke="#9aa0ab" strokeWidth="1.6"
+                  x="4"
+                  y="4"
+                  width="16"
+                  height="16"
+                  rx="2"
+                  stroke="#9aa0ab"
+                  strokeWidth="1.6"
                 />
               </svg>
             </div>
             <p className="text-[13px] text-[#9aa0ab]">
-              {isFineTuneMode ? '영역이 없습니다' : '캔버스에 영역을 그려주세요'}
+              {isFineTuneMode
+                ? "영역이 없습니다"
+                : "캔버스에 영역을 그려주세요"}
             </p>
           </div>
         ) : (
@@ -103,9 +110,7 @@ export function RegionMappingPanel({
                 className="w-[8px] h-[8px] rounded-full flex-none"
                 style={{ background: item.color }}
               />
-              <span
-                className="text-[14px] font-bold flex-1 min-w-0 text-[#15171d]"
-              >
+              <span className="text-[14px] font-bold flex-1 min-w-0 text-[#15171d]">
                 {item.problemLabel}
               </span>
 
@@ -148,5 +153,5 @@ export function RegionMappingPanel({
         </div>
       )}
     </div>
-  )
+  );
 }

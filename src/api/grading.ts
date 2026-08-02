@@ -6,32 +6,36 @@ import type {
   ExamResultResponse,
   ExamStatisticsResponse,
   StudentDetailResultResponse,
-} from '@/types/dto'
-import { apiClient } from './client'
+} from "@/types/dto";
+import { apiClient } from "./client";
 
 export interface GradeCreateRequest {
-  score: number
+  score: number;
 }
 
 export interface GradeUpdateRequest {
-  score?: number
-  comment?: string
-  rubric_breakdown?: { rubric_id: number; satisfied: boolean }[]
+  score?: number;
+  comment?: string;
+  rubric_breakdown?: { rubric_id: number; satisfied: boolean }[];
 }
 
 export interface GradeBulkConfirmResponse {
-  confirmed_count: number
+  confirmed_count: number;
 }
 
 export const gradingApi = {
   getProgress: (examId: number) =>
     apiClient
-      .get<ApiResponse<GradingProgressResponse>>(`/exams/${examId}/grading/progress`)
+      .get<ApiResponse<GradingProgressResponse>>(
+        `/exams/${examId}/grading/progress`,
+      )
       .then((r) => r.data),
 
   runForProblem: (examId: number, problemId: number) =>
     apiClient
-      .post<ApiResponse<JobStartedResponse>>(`/exams/${examId}/problems/${problemId}/grade/run`)
+      .post<ApiResponse<JobStartedResponse>>(
+        `/exams/${examId}/problems/${problemId}/grade/run`,
+      )
       .then((r) => r.data),
 
   getProblemGrades: (problemId: number) =>
@@ -54,14 +58,23 @@ export const gradingApi = {
       .delete<ApiResponse<GradeResponse>>(`/problems/${problemId}/grades`)
       .then((r) => r.data),
 
-  createGrade: (problemId: number, studentId: number, body: GradeCreateRequest) =>
+  createGrade: (
+    problemId: number,
+    studentId: number,
+    body: GradeCreateRequest,
+  ) =>
     apiClient
-      .post<ApiResponse<GradeResponse>>(`/problems/${problemId}/students/${studentId}/grades`, body)
+      .post<ApiResponse<GradeResponse>>(
+        `/problems/${problemId}/students/${studentId}/grades`,
+        body,
+      )
       .then((r) => r.data),
 
   confirmAllGrades: (problemId: number) =>
     apiClient
-      .post<ApiResponse<GradeBulkConfirmResponse>>(`/problems/${problemId}/grades/confirm-all`)
+      .post<ApiResponse<GradeBulkConfirmResponse>>(
+        `/problems/${problemId}/grades/confirm-all`,
+      )
       .then((r) => r.data),
 
   getResults: (examId: number) =>
@@ -71,7 +84,9 @@ export const gradingApi = {
 
   getStatistics: (examId: number) =>
     apiClient
-      .get<ApiResponse<ExamStatisticsResponse>>(`/exams/${examId}/results/statistics`)
+      .get<ApiResponse<ExamStatisticsResponse>>(
+        `/exams/${examId}/results/statistics`,
+      )
       .then((r) => r.data),
 
   getStudentDetail: (examId: number, studentId: number) =>
@@ -83,6 +98,6 @@ export const gradingApi = {
 
   exportCsv: (examId: number) =>
     apiClient
-      .get(`/exams/${examId}/results/export`, { responseType: 'blob' })
+      .get(`/exams/${examId}/results/export`, { responseType: "blob" })
       .then((r) => r.data),
-}
+};

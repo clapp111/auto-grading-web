@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { Plus, Sparkles, Trash2, RefreshCw } from 'lucide-react'
-import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { CodeEditor } from '@/components/exam/CodeEditor'
-import { useRubric } from '@/hooks/exam/useRubric'
-import { examsApi } from '@/api/exams'
-import { problemsApi, type RubricUpdateRequest } from '@/api/problems'
-import type { ProblemResponse, ModelAnswerResponse, RubricResponse } from '@/types/dto'
-import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '@/types/constants'
-import { cn } from '@/lib/utils'
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Plus, Sparkles, Trash2, RefreshCw } from "lucide-react";
+import { ExamSidebar } from "@/components/common/ExamSidebar";
+import { CodeEditor } from "@/components/exam/CodeEditor";
+import { useRubric } from "@/hooks/exam/useRubric";
+import { examsApi } from "@/api/exams";
+import { problemsApi, type RubricUpdateRequest } from "@/api/problems";
+import type {
+  ProblemResponse,
+  ModelAnswerResponse,
+  RubricResponse,
+} from "@/types/dto";
+import {
+  TYPE_COLORS,
+  TYPE_TEXT_COLORS,
+  TYPE_LABELS_KO,
+} from "@/types/constants";
+import { cn } from "@/lib/utils";
 
 // ── 루브릭 기준 카드 ──────────────────────────────────────────────────
 
@@ -19,35 +27,41 @@ function RubricCriterionCard({
   onUpdate,
   onDelete,
 }: {
-  rubric: RubricResponse
-  onUpdate: (body: RubricUpdateRequest) => void
-  onDelete: () => void
+  rubric: RubricResponse;
+  onUpdate: (body: RubricUpdateRequest) => void;
+  onDelete: () => void;
 }) {
-  const [text, setText] = useState(rubric.text)
-  const [scoreStr, setScoreStr] = useState(String(Math.round(rubric.allocated_score)))
+  const [text, setText] = useState(rubric.text);
+  const [scoreStr, setScoreStr] = useState(
+    String(Math.round(rubric.allocated_score)),
+  );
 
-  useEffect(() => { setText(rubric.text) }, [rubric.text])
-  useEffect(() => { setScoreStr(String(Math.round(rubric.allocated_score))) }, [rubric.allocated_score])
+  useEffect(() => {
+    setText(rubric.text);
+  }, [rubric.text]);
+  useEffect(() => {
+    setScoreStr(String(Math.round(rubric.allocated_score)));
+  }, [rubric.allocated_score]);
 
   const handleTextBlur = () => {
-    const trimmed = text.trim()
-    if (trimmed !== rubric.text) onUpdate({ text: trimmed })
-  }
+    const trimmed = text.trim();
+    if (trimmed !== rubric.text) onUpdate({ text: trimmed });
+  };
 
   const handleScoreBlur = () => {
-    const n = Math.round(parseFloat(scoreStr))
+    const n = Math.round(parseFloat(scoreStr));
     if (!isNaN(n) && n >= 0 && n !== Math.round(rubric.allocated_score)) {
-      onUpdate({ allocated_score: n })
+      onUpdate({ allocated_score: n });
     } else {
-      setScoreStr(String(Math.round(rubric.allocated_score)))
+      setScoreStr(String(Math.round(rubric.allocated_score)));
     }
-  }
+  };
 
   return (
     <div className="border border-[#ebedf1] rounded-[12px] p-[15px_16px] flex items-start gap-3 group">
       {/* AI 뱃지 */}
       <div className="flex-none mt-[2px] w-[26px]">
-        {rubric.source === 'LLM' && (
+        {rubric.source === "LLM" && (
           <span className="inline-flex items-center justify-center w-[26px] h-[18px] rounded-[5px] bg-[#7c5cfc15] text-[10px] font-extrabold text-accent">
             AI
           </span>
@@ -57,24 +71,32 @@ function RubricCriterionCard({
       {/* 텍스트 */}
       <textarea
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={(e) => setText(e.target.value)}
         onBlur={handleTextBlur}
-        rows={text.split('\n').length || 1}
+        rows={text.split("\n").length || 1}
         placeholder="채점 기준을 입력하세요"
         className="flex-1 resize-none text-[13.5px] text-[#3a3e46] leading-[1.65] outline-none bg-transparent placeholder:text-[#c2c6cd]"
-        style={{ minHeight: 24, overflow: 'hidden', fieldSizing: 'content' } as React.CSSProperties}
+        style={
+          {
+            minHeight: 24,
+            overflow: "hidden",
+            fieldSizing: "content",
+          } as React.CSSProperties
+        }
       />
 
       {/* 배점 + 삭제 */}
       <div className="flex items-center gap-[8px] flex-none">
         <div className="flex items-center h-[30px] border border-[#e2e4e9] rounded-[8px] px-[9px] bg-white">
-          <span className="text-[12px] text-[#9aa0ab] mr-[3px] font-medium">+</span>
+          <span className="text-[12px] text-[#9aa0ab] mr-[3px] font-medium">
+            +
+          </span>
           <input
             type="number"
             min="0"
             step="1"
             value={scoreStr}
-            onChange={e => setScoreStr(e.target.value)}
+            onChange={(e) => setScoreStr(e.target.value)}
             onBlur={handleScoreBlur}
             className="w-[32px] text-right text-[14px] font-bold text-[#15171d] font-mono outline-none bg-transparent"
           />
@@ -89,7 +111,7 @@ function RubricCriterionCard({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // ── 루브릭 패널 ───────────────────────────────────────────────────────
@@ -98,31 +120,36 @@ function RubricPanel({
   problem,
   modelAnswer,
 }: {
-  problem: ProblemResponse
-  modelAnswer: ModelAnswerResponse | null
+  problem: ProblemResponse;
+  modelAnswer: ModelAnswerResponse | null;
 }) {
-  const { rubric, suggesting, suggestJobProgress, suggest, addCriterion, updateCriterion, deleteCriterion } =
-    useRubric(problem.problem_id)
-  const [showSuggestConfirm, setShowSuggestConfirm] = useState(false)
+  const {
+    rubric,
+    suggesting,
+    suggestJobProgress,
+    suggest,
+    addCriterion,
+    updateCriterion,
+    deleteCriterion,
+  } = useRubric(problem.problem_id);
+  const [showSuggestConfirm, setShowSuggestConfirm] = useState(false);
 
-  const totalAllocated = rubric.reduce((sum, r) => sum + r.allocated_score, 0)
+  const totalAllocated = rubric.reduce((sum, r) => sum + r.allocated_score, 0);
 
   return (
     <div className="flex-1 flex min-h-0">
       {/* Left: 문제 정보 */}
       <div className="w-[680px] shrink-0 border-r border-[#f0f1f4] flex flex-col overflow-y-auto">
         <div className="px-[24px] py-[20px] flex flex-col gap-[18px]">
-
           {/* 문제 텍스트 */}
           {problem.problem_text && (
             <div>
               <p className="text-[12px] font-semibold text-[#9aa0ab] mb-[8px] uppercase tracking-wide">
                 문제
               </p>
-              <p
-                className="text-[13px] text-[#4b4f57] leading-[1.75] whitespace-pre-wrap font-mono bg-[#f7f8fa] border border-[#eef0f3] rounded-[10px] p-[12px_14px]">
+              <p className="text-[13px] text-[#4b4f57] leading-[1.75] whitespace-pre-wrap font-mono bg-[#f7f8fa] border border-[#eef0f3] rounded-[10px] p-[12px_14px]">
                 {problem.problem_text.length > 400
-                  ? problem.problem_text.slice(0, 400) + '...'
+                  ? problem.problem_text.slice(0, 400) + "..."
                   : problem.problem_text}
               </p>
             </div>
@@ -134,7 +161,7 @@ function RubricPanel({
               모범답안
             </p>
             {modelAnswer?.model_answer_text ? (
-              problem.type === 'CODING' ? (
+              problem.type === "CODING" ? (
                 <div className="border border-[#e6e8ec] rounded-[11px] overflow-hidden h-[300px]">
                   <CodeEditor
                     value={modelAnswer.model_answer_text}
@@ -160,7 +187,9 @@ function RubricPanel({
       <div className="flex-1 flex flex-col min-h-0">
         {/* 루브릭 헤더 */}
         <div className="px-[24px] py-[16px] border-b border-[#f0f1f4] flex items-center gap-[10px] flex-none">
-          <span className="text-[14.5px] font-bold text-[#15171d]">채점 기준</span>
+          <span className="text-[14.5px] font-bold text-[#15171d]">
+            채점 기준
+          </span>
           <span className="flex items-center gap-[4px] text-[11.5px] font-bold px-[8px] py-[3px] rounded-[6px] bg-[#7c5cfc12] text-accent">
             <Sparkles size={10} />
             AI 추천
@@ -170,12 +199,12 @@ function RubricPanel({
             {/* 배점 합계 */}
             <span
               className={cn(
-                'text-[12.5px] font-bold px-[10px] py-[4px] rounded-[8px]',
+                "text-[12.5px] font-bold px-[10px] py-[4px] rounded-[8px]",
                 totalAllocated === problem.max_score
-                  ? 'bg-[#16a86a15] text-[#16a86a]'
+                  ? "bg-[#16a86a15] text-[#16a86a]"
                   : totalAllocated > problem.max_score
-                    ? 'bg-[#f0625c15] text-[#f0625c]'
-                    : 'bg-[#f0f1f4] text-[#71757e]',
+                    ? "bg-[#f0625c15] text-[#f0625c]"
+                    : "bg-[#f0f1f4] text-[#71757e]",
               )}
             >
               {totalAllocated} / {problem.max_score}점
@@ -190,9 +219,9 @@ function RubricPanel({
             >
               <RefreshCw
                 size={13}
-                className={cn(suggesting && 'animate-spin')}
+                className={cn(suggesting && "animate-spin")}
               />
-              {suggesting ? 'AI 추천 중...' : '다시 추천'}
+              {suggesting ? "AI 추천 중..." : "다시 추천"}
             </button>
           </div>
         </div>
@@ -205,24 +234,30 @@ function RubricPanel({
                 <Sparkles size={20} className="text-accent" />
               </div>
               <p className="text-[13.5px] text-[#71757e] text-center">
-                채점 기준이 없습니다<br />
-                <span className="text-accent font-semibold">다시 추천</span>을 눌러 AI가 기준을 생성하게 하거나<br />직접 추가하세요
+                채점 기준이 없습니다
+                <br />
+                <span className="text-accent font-semibold">다시 추천</span>을
+                눌러 AI가 기준을 생성하게 하거나
+                <br />
+                직접 추가하세요
               </p>
             </div>
           ) : suggesting && rubric.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-3">
               <RefreshCw size={22} className="text-accent animate-spin" />
-              <p className="text-[13.5px] text-[#9aa0ab]">AI가 채점 기준을 생성하고 있습니다...</p>
+              <p className="text-[13.5px] text-[#9aa0ab]">
+                AI가 채점 기준을 생성하고 있습니다...
+              </p>
             </div>
           ) : (
             rubric
               .slice()
               .sort((a, b) => a.order_index - b.order_index)
-              .map(r => (
+              .map((r) => (
                 <RubricCriterionCard
                   key={r.rubric_id}
                   rubric={r}
-                  onUpdate={body => updateCriterion(r.rubric_id, body)}
+                  onUpdate={(body) => updateCriterion(r.rubric_id, body)}
                   onDelete={() => deleteCriterion(r.rubric_id)}
                 />
               ))
@@ -258,11 +293,14 @@ function RubricPanel({
                     />
                   </div>
                   <p className="text-[13.5px] text-[#71757e]">
-                    {suggestJobProgress.current} / {suggestJobProgress.total} 완료
+                    {suggestJobProgress.current} / {suggestJobProgress.total}{" "}
+                    완료
                   </p>
                 </>
               ) : (
-                <p className="text-[13.5px] text-[#71757e]">잠시 기다려주세요...</p>
+                <p className="text-[13.5px] text-[#71757e]">
+                  잠시 기다려주세요...
+                </p>
               )}
             </div>
           </div>
@@ -277,12 +315,16 @@ function RubricPanel({
         >
           <div
             className="bg-white rounded-[16px] shadow-xl w-[360px] p-[28px] flex flex-col gap-[20px]"
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-[8px]">
-              <p className="text-[16px] font-bold text-[#15171d]">루브릭 다시 추천</p>
+              <p className="text-[16px] font-bold text-[#15171d]">
+                루브릭 다시 추천
+              </p>
               <p className="text-[13.5px] text-[#71757e] leading-[1.65]">
-                기존의 루브릭과 채점 기록이 삭제됩니다.<br />계속하시겠습니까?
+                기존의 루브릭과 채점 기록이 삭제됩니다.
+                <br />
+                계속하시겠습니까?
               </p>
             </div>
             <div className="flex gap-[8px] justify-end">
@@ -295,7 +337,10 @@ function RubricPanel({
               </button>
               <button
                 type="button"
-                onClick={() => { setShowSuggestConfirm(false); suggest() }}
+                onClick={() => {
+                  setShowSuggestConfirm(false);
+                  suggest();
+                }}
                 className="h-[40px] px-[16px] bg-[#f0625c] text-white rounded-[10px] text-[13.5px] font-semibold hover:opacity-90 transition-opacity"
               >
                 삭제 후 추천
@@ -305,74 +350,82 @@ function RubricPanel({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ── Step2Page ─────────────────────────────────────────────────────────
 
 export default function Step2Page() {
-  const { examId: examIdStr } = useParams<{ examId: string }>()
-  const examId = Number(examIdStr)
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const [activeProblemId, setActiveProblemId] = useState<number | null>(null)
-  const [isAdvancing, setIsAdvancing] = useState(false)
+  const { examId: examIdStr } = useParams<{ examId: string }>();
+  const examId = Number(examIdStr);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const handleNext = async () => {
-    setIsAdvancing(true)
+    setIsAdvancing(true);
     try {
-      await examsApi.advance(examId, 2)
-      await qc.invalidateQueries({ queryKey: ['exam', examId] })
-      navigate(`/exam/${examId}/step/3`)
+      await examsApi.advance(examId, 2);
+      await qc.invalidateQueries({ queryKey: ["exam", examId] });
+      navigate(`/exam/${examId}/step/3`);
     } catch {
-      toast.error('진행 상태 업데이트에 실패했습니다.')
+      toast.error("진행 상태 업데이트에 실패했습니다.");
     } finally {
-      setIsAdvancing(false)
+      setIsAdvancing(false);
     }
-  }
+  };
 
   const { data: examRes } = useQuery({
-    queryKey: ['exam', examId],
+    queryKey: ["exam", examId],
     queryFn: () => examsApi.get(examId),
     enabled: !!examId,
-  })
+  });
 
   const { data: problemsData } = useQuery({
-    queryKey: ['problems', examId],
-    queryFn: () => problemsApi.list(examId).then(r => r.data ?? []),
+    queryKey: ["problems", examId],
+    queryFn: () => problemsApi.list(examId).then((r) => r.data ?? []),
     enabled: !!examId,
-  })
+  });
 
   const { data: modelAnswersData } = useQuery({
-    queryKey: ['model-answers', examId],
-    queryFn: () => problemsApi.listModelAnswers(examId).then(r => r.data ?? []),
+    queryKey: ["model-answers", examId],
+    queryFn: () =>
+      problemsApi.listModelAnswers(examId).then((r) => r.data ?? []),
     enabled: !!examId,
-  })
+  });
 
-  const problems: ProblemResponse[] = problemsData ?? []
-  const modelAnswers: ModelAnswerResponse[] = modelAnswersData ?? []
+  const problems: ProblemResponse[] = problemsData ?? [];
+  const modelAnswers: ModelAnswerResponse[] = modelAnswersData ?? [];
 
   // 서술형·손코딩 문제만 루브릭 설정 대상
   const rubricProblems = problems.filter(
-    p => p.type === 'DESCRIPTIVE' || p.type === 'CODING',
-  )
+    (p) => p.type === "DESCRIPTIVE" || p.type === "CODING",
+  );
 
   useEffect(() => {
     if (rubricProblems.length > 0 && activeProblemId === null) {
-      setActiveProblemId(rubricProblems[0].problem_id)
+      setActiveProblemId(rubricProblems[0].problem_id);
     }
-  }, [rubricProblems, activeProblemId])
+  }, [rubricProblems, activeProblemId]);
 
-  const activeProblem = rubricProblems.find(p => p.problem_id === activeProblemId) ?? null
-  const activeModelAnswer = modelAnswers.find(a => a.problem_id === activeProblemId) ?? null
+  const activeProblem =
+    rubricProblems.find((p) => p.problem_id === activeProblemId) ?? null;
+  const activeModelAnswer =
+    modelAnswers.find((a) => a.problem_id === activeProblemId) ?? null;
 
-  const examName = examRes?.data?.name
+  const examName = examRes?.data?.name;
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {/* 사이드바 */}
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examName} currentStep={2} examStep={examRes?.data?.step} />
+        <ExamSidebar
+          examId={examId}
+          examName={examName}
+          currentStep={2}
+          examStep={examRes?.data?.step}
+        />
       </aside>
 
       {/* 메인 */}
@@ -391,21 +444,23 @@ export default function Step2Page() {
           {/* 문제 탭 */}
           {rubricProblems.length > 0 && (
             <div className="flex gap-[4px]">
-              {rubricProblems.map(p => {
-                const isActive = activeProblemId === p.problem_id
-                const color = TYPE_COLORS[p.type]
+              {rubricProblems.map((p) => {
+                const isActive = activeProblemId === p.problem_id;
+                const color = TYPE_COLORS[p.type];
                 return (
                   <button
                     key={p.problem_id}
                     type="button"
                     onClick={() => setActiveProblemId(p.problem_id)}
                     className={cn(
-                      'h-[36px] flex items-center gap-[6px] px-[14px] rounded-t-[10px] text-[13px] font-semibold transition-colors border-b-2',
+                      "h-[36px] flex items-center gap-[6px] px-[14px] rounded-t-[10px] text-[13px] font-semibold transition-colors border-b-2",
                       isActive
-                        ? 'border-b-transparent bg-white text-[#15171d]'
-                        : 'border-transparent text-[#9aa0ab] hover:text-[#5f636b]',
+                        ? "border-b-transparent bg-white text-[#15171d]"
+                        : "border-transparent text-[#9aa0ab] hover:text-[#5f636b]",
                     )}
-                    style={isActive ? { boxShadow: '0 -1px 0 0 #ecedf1 inset' } : {}}
+                    style={
+                      isActive ? { boxShadow: "0 -1px 0 0 #ecedf1 inset" } : {}
+                    }
                   >
                     <span
                       className="w-[7px] h-[7px] rounded-full flex-none"
@@ -416,14 +471,17 @@ export default function Step2Page() {
                       className="text-[11px] font-bold px-[7px] py-[2px] rounded-[6px]"
                       style={
                         isActive
-                          ? { background: color + '18', color: TYPE_TEXT_COLORS[p.type] }
-                          : { background: '#f0f1f4', color: '#9aa0ab' }
+                          ? {
+                              background: color + "18",
+                              color: TYPE_TEXT_COLORS[p.type],
+                            }
+                          : { background: "#f0f1f4", color: "#9aa0ab" }
                       }
                     >
                       {TYPE_LABELS_KO[p.type]}
                     </span>
                   </button>
-                )
+                );
               })}
             </div>
           )}
@@ -440,11 +498,15 @@ export default function Step2Page() {
                 서술형 또는 손코딩 문제가 없어 루브릭 설정을 건너뜁니다
               </p>
               <p className="text-[12.5px] text-[#9aa0ab]">
-                1단계에서 서술형·손코딩 문제를 추가하면 여기서 채점 기준을 설정할 수 있습니다
+                1단계에서 서술형·손코딩 문제를 추가하면 여기서 채점 기준을
+                설정할 수 있습니다
               </p>
             </div>
           ) : activeProblem ? (
-            <RubricPanel problem={activeProblem} modelAnswer={activeModelAnswer} />
+            <RubricPanel
+              problem={activeProblem}
+              modelAnswer={activeModelAnswer}
+            />
           ) : null}
         </div>
 
@@ -465,11 +527,17 @@ export default function Step2Page() {
           >
             다음: 학생 정보 입력
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M9 5l7 7-7 7"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </div>
       </main>
     </div>
-  )
+  );
 }

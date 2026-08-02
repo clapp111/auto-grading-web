@@ -1,66 +1,72 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { Sparkles, AlignLeft, ClipboardCheck, UserCheck, ChevronRight } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
-import { authApi } from '@/api/auth'
-import LoginModal from '@/components/auth/LoginModal'
-import SignupModal from '@/components/auth/SignupModal'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Sparkles,
+  AlignLeft,
+  ClipboardCheck,
+  UserCheck,
+  ChevronRight,
+} from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
+import { authApi } from "@/api/auth";
+import LoginModal from "@/components/auth/LoginModal";
+import SignupModal from "@/components/auth/SignupModal";
 
 const FEATURES = [
   {
-    bg: '#4F46E512',
+    bg: "#4F46E512",
     icon: <AlignLeft size={22} color="#4F46E5" />,
-    title: '손글씨 OCR',
-    desc: '서술형·손코딩 답안을 텍스트로 인식하고, 손코딩은 언어 문법으로 자동 보정합니다.',
+    title: "손글씨 OCR",
+    desc: "서술형·손코딩 답안을 텍스트로 인식하고, 손코딩은 언어 문법으로 자동 보정합니다.",
   },
   {
-    bg: '#14b8a612',
+    bg: "#14b8a612",
     icon: <ClipboardCheck size={22} color="#0d9488" />,
-    title: '루브릭 추천',
-    desc: '문제와 모범답안을 바탕으로 채점 기준과 배점을 AI가 제안합니다.',
+    title: "루브릭 추천",
+    desc: "문제와 모범답안을 바탕으로 채점 기준과 배점을 AI가 제안합니다.",
   },
   {
-    bg: '#f59e0b12',
+    bg: "#f59e0b12",
     icon: <Sparkles size={22} color="#d68310" />,
-    title: '자동 채점·코멘트',
-    desc: '루브릭 기준으로 점수와 코멘트를 작성하고, 객관식·단답형은 즉시 채점합니다.',
+    title: "자동 채점·코멘트",
+    desc: "루브릭 기준으로 점수와 코멘트를 작성하고, 객관식·단답형은 즉시 채점합니다.",
   },
   {
-    bg: '#0ea5e912',
+    bg: "#0ea5e912",
     icon: <UserCheck size={22} color="#0284c7" />,
-    title: '사람이 최종 확인',
-    desc: '신뢰도가 낮은 부분만 짚어주어, 선생님은 확인하고 확정만 하면 됩니다.',
+    title: "사람이 최종 확인",
+    desc: "신뢰도가 낮은 부분만 짚어주어, 선생님은 확인하고 확정만 하면 됩니다.",
   },
-]
+];
 
 const STEPS = [
-  { n: 1, title: '문제지 세팅', desc: '문제 영역·유형·정답 등록' },
-  { n: 2, title: '루브릭 설정', desc: 'AI 추천 기준 검토' },
-  { n: 3, title: '답안 업로드', desc: '학생 매칭·영역 지정' },
-  { n: 4, title: 'OCR 확인', desc: '인식 결과 검토·수정' },
-  { n: 5, title: '채점·성적', desc: '확정 후 결과 내보내기' },
-]
+  { n: 1, title: "문제지 세팅", desc: "문제 영역·유형·정답 등록" },
+  { n: 2, title: "루브릭 설정", desc: "AI 추천 기준 검토" },
+  { n: 3, title: "답안 업로드", desc: "학생 매칭·영역 지정" },
+  { n: 4, title: "OCR 확인", desc: "인식 결과 검토·수정" },
+  { n: 5, title: "채점·성적", desc: "확정 후 결과 내보내기" },
+];
 
 export default function LandingPage() {
-  const [loginOpen, setLoginOpen] = useState(false)
-  const [signupOpen, setSignupOpen] = useState(false)
-  const navigate = useNavigate()
-  const token = useAuthStore((s) => s.token)
-  const member = useAuthStore((s) => s.member)
-  const setAuth = useAuthStore((s) => s.setAuth)
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [signupOpen, setSignupOpen] = useState(false);
+  const navigate = useNavigate();
+  const token = useAuthStore((s) => s.token);
+  const member = useAuthStore((s) => s.member);
+  const setAuth = useAuthStore((s) => s.setAuth);
 
   const { data: freshMember } = useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: () => authApi.me().then((r) => r.data),
     enabled: !!token,
-  })
+  });
 
   useEffect(() => {
-    if (freshMember && token) setAuth(token, freshMember)
-  }, [freshMember, token, setAuth])
+    if (freshMember && token) setAuth(token, freshMember);
+  }, [freshMember, token, setAuth]);
 
-  const displayMember = freshMember ?? member
+  const displayMember = freshMember ?? member;
 
   return (
     <div className="min-h-screen bg-white font-sans">
@@ -71,7 +77,9 @@ export default function LandingPage() {
           <div className="w-8 h-8 rounded-[8px] bg-accent flex items-center justify-center">
             <Sparkles size={16} className="text-white" />
           </div>
-          <span className="text-[15px] font-extrabold text-[#15171d] tracking-tight">Grading</span>
+          <span className="text-[15px] font-extrabold text-[#15171d] tracking-tight">
+            Grading
+          </span>
         </div>
 
         {/* 네비 링크 */}
@@ -81,7 +89,9 @@ export default function LandingPage() {
           </span>
           <button
             className="w-[74px] text-center text-[14.5px] text-[#71757e] font-medium py-[7px] rounded-[8px] hover:bg-[#f7f8fa] transition-colors"
-            onClick={() => token ? navigate('/dashboard') : setLoginOpen(true)}
+            onClick={() =>
+              token ? navigate("/dashboard") : setLoginOpen(true)
+            }
           >
             내 시험
           </button>
@@ -92,12 +102,12 @@ export default function LandingPage() {
             <>
               <button
                 className="h-[44px] px-[18px] border border-[#e0e3e9] bg-white rounded-[11px] text-[#4b4f57] text-[14px] font-semibold hover:bg-[#f7f8fa] transition-colors"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
               >
                 내 시험 바로가기
               </button>
               <button
-                onClick={() => navigate('/account')}
+                onClick={() => navigate("/account")}
                 className="w-[34px] h-[34px] rounded-full overflow-hidden flex-none"
                 title="계정 설정"
               >
@@ -109,7 +119,7 @@ export default function LandingPage() {
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-accent to-[#7c83f0] flex items-center justify-center text-white font-bold text-[14px]">
-                    {displayMember?.name?.[0]?.toUpperCase() ?? '?'}
+                    {displayMember?.name?.[0]?.toUpperCase() ?? "?"}
                   </div>
                 )}
               </button>
@@ -137,7 +147,8 @@ export default function LandingPage() {
           채점 시간, 지금 절반으로 줄여보세요
         </h1>
         <p className="text-[18px] text-[#5f636b] mt-[22px] leading-[1.65] max-w-[620px] mx-auto">
-          손글씨 OCR부터 루브릭 추천, 자동 채점과 코멘트 작성까지.<br />
+          손글씨 OCR부터 루브릭 추천, 자동 채점과 코멘트 작성까지.
+          <br />
           반복 작업은 맡기고, 판단이 필요한 곳에만 집중하세요.
         </p>
 
@@ -174,8 +185,12 @@ export default function LandingPage() {
               <div className="h-[11px] rounded-[4px] bg-[#fde68a] w-[72%]" />
               <div className="h-[11px] rounded-[4px] bg-[#e7e9ed] w-[55%]" />
               <div className="mt-auto flex items-center justify-between pt-[14px] border-t border-[#f0f1f4]">
-                <span className="text-[13px] text-[#9aa0ab] font-semibold">점수</span>
-                <span className="text-[20px] font-extrabold text-[#15171d]">7 / 10</span>
+                <span className="text-[13px] text-[#9aa0ab] font-semibold">
+                  점수
+                </span>
+                <span className="text-[20px] font-extrabold text-[#15171d]">
+                  7 / 10
+                </span>
               </div>
             </div>
           </div>
@@ -185,7 +200,9 @@ export default function LandingPage() {
       {/* ── Features ── */}
       <section className="px-10 py-[72px]">
         <div className="text-center mb-11">
-          <p className="text-[13px] font-bold text-accent tracking-[.08em] uppercase">Features</p>
+          <p className="text-[13px] font-bold text-accent tracking-[.08em] uppercase">
+            Features
+          </p>
           <h2 className="text-[32px] font-extrabold text-[#15171d] tracking-[-0.03em] mt-2">
             사람의 일을 덜어주는 4가지
           </h2>
@@ -202,8 +219,12 @@ export default function LandingPage() {
               >
                 {f.icon}
               </div>
-              <p className="text-[16.5px] font-bold text-[#15171d] mb-2">{f.title}</p>
-              <p className="text-[13.5px] text-[#71757e] leading-[1.6]">{f.desc}</p>
+              <p className="text-[16.5px] font-bold text-[#15171d] mb-2">
+                {f.title}
+              </p>
+              <p className="text-[13.5px] text-[#71757e] leading-[1.6]">
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>
@@ -212,7 +233,9 @@ export default function LandingPage() {
       {/* ── How it works ── */}
       <section className="px-10 py-[72px] bg-[#f7f8fa]">
         <div className="text-center mb-11">
-          <p className="text-[13px] font-bold text-accent tracking-[.08em] uppercase">How it works</p>
+          <p className="text-[13px] font-bold text-accent tracking-[.08em] uppercase">
+            How it works
+          </p>
           <h2 className="text-[32px] font-extrabold text-[#15171d] tracking-[-0.03em] mt-2">
             5단계로 끝나는 채점
           </h2>
@@ -220,18 +243,32 @@ export default function LandingPage() {
         <div className="flex items-start justify-center max-w-[980px] mx-auto">
           {STEPS.flatMap((s, i) => {
             const step = (
-              <div key={s.n} className="flex flex-col items-center text-center flex-1">
+              <div
+                key={s.n}
+                className="flex flex-col items-center text-center flex-1"
+              >
                 <div className="w-[44px] h-[44px] rounded-full bg-accent text-white flex items-center justify-center text-[17px] font-extrabold">
                   {s.n}
                 </div>
-                <p className="text-[14.5px] font-bold text-[#15171d] mt-[14px]">{s.title}</p>
-                <p className="text-[12.5px] text-[#71757e] leading-[1.5] mt-[6px]">{s.desc}</p>
+                <p className="text-[14.5px] font-bold text-[#15171d] mt-[14px]">
+                  {s.title}
+                </p>
+                <p className="text-[12.5px] text-[#71757e] leading-[1.5] mt-[6px]">
+                  {s.desc}
+                </p>
               </div>
-            )
+            );
             if (i < STEPS.length - 1) {
-              return [step, <ChevronRight key={`arrow-${i}`} size={22} className="text-[#cdd1d8] mt-[14px] flex-none" />]
+              return [
+                step,
+                <ChevronRight
+                  key={`arrow-${i}`}
+                  size={22}
+                  className="text-[#cdd1d8] mt-[14px] flex-none"
+                />,
+              ];
             }
-            return [step]
+            return [step];
           })}
         </div>
       </section>
@@ -245,9 +282,15 @@ export default function LandingPage() {
           <span className="text-[14px] font-bold text-[#15171d]">Grading</span>
         </div>
         <div className="flex gap-[22px] text-[13px] text-[#9aa0ab] font-medium">
-          <button className="hover:text-[#71757e] transition-colors">이용약관</button>
-          <button className="hover:text-[#71757e] transition-colors">개인정보 처리방침</button>
-          <button className="hover:text-[#71757e] transition-colors">문의</button>
+          <button className="hover:text-[#71757e] transition-colors">
+            이용약관
+          </button>
+          <button className="hover:text-[#71757e] transition-colors">
+            개인정보 처리방침
+          </button>
+          <button className="hover:text-[#71757e] transition-colors">
+            문의
+          </button>
         </div>
         <p className="text-[12.5px] text-[#aab0ba]">© 2026 Grading</p>
       </footer>
@@ -256,13 +299,19 @@ export default function LandingPage() {
       <LoginModal
         open={loginOpen}
         onClose={() => setLoginOpen(false)}
-        onSwitchToSignup={() => { setLoginOpen(false); setSignupOpen(true) }}
+        onSwitchToSignup={() => {
+          setLoginOpen(false);
+          setSignupOpen(true);
+        }}
       />
       <SignupModal
         open={signupOpen}
         onClose={() => setSignupOpen(false)}
-        onSwitchToLogin={() => { setSignupOpen(false); setLoginOpen(true) }}
+        onSwitchToLogin={() => {
+          setSignupOpen(false);
+          setLoginOpen(true);
+        }}
       />
     </div>
-  )
+  );
 }

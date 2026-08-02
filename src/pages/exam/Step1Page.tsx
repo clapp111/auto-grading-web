@@ -1,52 +1,55 @@
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { SubStep1 } from '@/components/exam/SubStep1'
-import { SubStep2 } from '@/components/exam/SubStep2'
-import { SubStep3 } from '@/components/exam/SubStep3'
-import { examsApi } from '@/api/exams'
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { ExamSidebar } from "@/components/common/ExamSidebar";
+import { SubStep1 } from "@/components/exam/SubStep1";
+import { SubStep2 } from "@/components/exam/SubStep2";
+import { SubStep3 } from "@/components/exam/SubStep3";
+import { examsApi } from "@/api/exams";
 
 export default function Step1Page() {
-  const { examId: examIdStr, sub: subStr } = useParams<{ examId: string; sub: string }>()
-  const examId = Number(examIdStr)
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const [isAdvancing, setIsAdvancing] = useState(false)
+  const { examId: examIdStr, sub: subStr } = useParams<{
+    examId: string;
+    sub: string;
+  }>();
+  const examId = Number(examIdStr);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
-  const urlSub = Number(subStr) || 1
-  const currentSub = Math.min(Math.max(urlSub - 1, 0), 2)
+  const urlSub = Number(subStr) || 1;
+  const currentSub = Math.min(Math.max(urlSub - 1, 0), 2);
 
   const { data: examRes } = useQuery({
-    queryKey: ['exam', examId],
+    queryKey: ["exam", examId],
     queryFn: () => examsApi.get(examId),
     enabled: !!examId,
-  })
-  const examName = examRes?.data?.name
-  const problemSheetUrl = examRes?.data?.problem_sheet_url ?? null
-  const modelAnswerUrl = examRes?.data?.model_answer_url ?? null
+  });
+  const examName = examRes?.data?.name;
+  const problemSheetUrl = examRes?.data?.problem_sheet_url ?? null;
+  const modelAnswerUrl = examRes?.data?.model_answer_url ?? null;
 
   const goNext = async () => {
     if (urlSub < 3) {
-      navigate(`/exam/${examId}/step/1/${urlSub + 1}`)
+      navigate(`/exam/${examId}/step/1/${urlSub + 1}`);
     } else {
-      setIsAdvancing(true)
+      setIsAdvancing(true);
       try {
-        await examsApi.advance(examId, 1)
-        await qc.invalidateQueries({ queryKey: ['exam', examId] })
-        navigate(`/exam/${examId}/step/2`)
+        await examsApi.advance(examId, 1);
+        await qc.invalidateQueries({ queryKey: ["exam", examId] });
+        navigate(`/exam/${examId}/step/2`);
       } catch {
-        toast.error('진행 상태 업데이트에 실패했습니다.')
+        toast.error("진행 상태 업데이트에 실패했습니다.");
       } finally {
-        setIsAdvancing(false)
+        setIsAdvancing(false);
       }
     }
-  }
+  };
 
   const goBack = () => {
-    if (urlSub > 1) navigate(`/exam/${examId}/step/1/${urlSub - 1}`)
-  }
+    if (urlSub > 1) navigate(`/exam/${examId}/step/1/${urlSub - 1}`);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
@@ -88,5 +91,5 @@ export default function Step1Page() {
         )}
       </main>
     </div>
-  )
+  );
 }

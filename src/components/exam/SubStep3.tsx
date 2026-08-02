@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react'
-import { useQueryClient, useMutation } from '@tanstack/react-query'
-import { Check, Plus, X } from 'lucide-react'
-import { toast } from 'sonner'
-import { useProblems } from '../../hooks/exam/useProblems'
-import { useModelAnswerOcr } from '../../hooks/exam/useModelAnswerOcr'
-import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO } from '../../types/constants'
-import { problemsApi } from '@/api/problems'
-import type { ModelAnswerResponse, ProblemResponse } from '@/types/dto'
-import { cn } from '@/lib/utils'
+import { useState, useEffect } from "react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { Check, Plus, X } from "lucide-react";
+import { toast } from "sonner";
+import { useProblems } from "../../hooks/exam/useProblems";
+import { useModelAnswerOcr } from "../../hooks/exam/useModelAnswerOcr";
+import {
+  TYPE_COLORS,
+  TYPE_TEXT_COLORS,
+  TYPE_LABELS_KO,
+} from "../../types/constants";
+import { problemsApi } from "@/api/problems";
+import type { ModelAnswerResponse, ProblemResponse } from "@/types/dto";
+import { cn } from "@/lib/utils";
 
 // ── 공통 카드 헤더 ────────────────────────────────────────────────────
 
@@ -16,26 +20,31 @@ function CardHeader({
   hint,
   right,
 }: {
-  problem: ProblemResponse
-  hint?: string
-  right?: React.ReactNode
+  problem: ProblemResponse;
+  hint?: string;
+  right?: React.ReactNode;
 }) {
-  const color = TYPE_COLORS[problem.type]
-  const textColor = TYPE_TEXT_COLORS[problem.type]
+  const color = TYPE_COLORS[problem.type];
+  const textColor = TYPE_TEXT_COLORS[problem.type];
   return (
     <div className="flex items-center gap-[9px] mb-[15px]">
-      <span className="w-[9px] h-[9px] rounded-full flex-none" style={{ background: color }} />
-      <span className="text-[15.5px] font-bold text-[#15171d]">{problem.label}</span>
+      <span
+        className="w-[9px] h-[9px] rounded-full flex-none"
+        style={{ background: color }}
+      />
+      <span className="text-[15.5px] font-bold text-[#15171d]">
+        {problem.label}
+      </span>
       <span
         className="text-[12px] font-bold px-[10px] py-[3px] rounded-[20px]"
-        style={{ color: textColor, background: color + '15' }}
+        style={{ color: textColor, background: color + "15" }}
       >
         {TYPE_LABELS_KO[problem.type]}
       </span>
       {hint && <span className="text-[13px] text-[#9aa0ab]">{hint}</span>}
       {right && <div className="ml-auto flex-none">{right}</div>}
     </div>
-  )
+  );
 }
 
 // ── 객관식 카드 ────────────────────────────────────────────────────────
@@ -45,36 +54,42 @@ function MultipleChoiceCard({
   problem,
   answer,
 }: {
-  examId: number
-  problem: ProblemResponse
-  answer: ModelAnswerResponse | null
+  examId: number;
+  problem: ProblemResponse;
+  answer: ModelAnswerResponse | null;
 }) {
-  const qc = useQueryClient()
-  const [choiceCount, setChoiceCount] = useState(answer?.choice_count ?? 5)
-  const [selected, setSelected] = useState<number | null>(answer?.correct_choice ?? null)
+  const qc = useQueryClient();
+  const [choiceCount, setChoiceCount] = useState(answer?.choice_count ?? 5);
+  const [selected, setSelected] = useState<number | null>(
+    answer?.correct_choice ?? null,
+  );
 
   useEffect(() => {
-    setChoiceCount(answer?.choice_count ?? 5)
-    setSelected(answer?.correct_choice ?? null)
-  }, [answer?.choice_count, answer?.correct_choice])
+    setChoiceCount(answer?.choice_count ?? 5);
+    setSelected(answer?.correct_choice ?? null);
+  }, [answer?.choice_count, answer?.correct_choice]);
 
   const mutation = useMutation({
     mutationFn: (body: { correct_choice?: number; choice_count?: number }) =>
       problemsApi.updateModelAnswer(problem.problem_id, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['model-answers', examId] }),
-    onError: () => toast.error('정답 저장에 실패했습니다.'),
-  })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["model-answers", examId] }),
+    onError: () => toast.error("정답 저장에 실패했습니다."),
+  });
 
   const changeCount = (delta: number) => {
-    const next = Math.max(2, Math.min(10, choiceCount + delta))
-    setChoiceCount(next)
-    mutation.mutate({ choice_count: next, correct_choice: selected ?? undefined })
-  }
+    const next = Math.max(2, Math.min(10, choiceCount + delta));
+    setChoiceCount(next);
+    mutation.mutate({
+      choice_count: next,
+      correct_choice: selected ?? undefined,
+    });
+  };
 
   const selectChoice = (n: number) => {
-    setSelected(n)
-    mutation.mutate({ correct_choice: n, choice_count: choiceCount })
-  }
+    setSelected(n);
+    mutation.mutate({ correct_choice: n, choice_count: choiceCount });
+  };
 
   return (
     <div className="border border-[#ebedf1] rounded-[13px] p-[18px_20px]">
@@ -106,16 +121,16 @@ function MultipleChoiceCard({
         }
       />
       <div className="flex gap-[11px] flex-wrap">
-        {Array.from({ length: choiceCount }, (_, i) => i + 1).map(n => (
+        {Array.from({ length: choiceCount }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
             type="button"
             onClick={() => selectChoice(n)}
             className={cn(
-              'w-[48px] h-[48px] rounded-[12px] text-[17px] font-semibold transition-all',
+              "w-[48px] h-[48px] rounded-[12px] text-[17px] font-semibold transition-all",
               selected === n
-                ? 'border-[2px] border-[#7c5cfc] bg-[#7c5cfc14] text-[#7c5cfc] font-extrabold shadow-[0_2px_8px_#7c5cfc33]'
-                : 'border-[1.5px] border-[#e2e4e9] text-[#aab0ba] hover:border-[#c2c6cd]',
+                ? "border-[2px] border-[#7c5cfc] bg-[#7c5cfc14] text-[#7c5cfc] font-extrabold shadow-[0_2px_8px_#7c5cfc33]"
+                : "border-[1.5px] border-[#e2e4e9] text-[#aab0ba] hover:border-[#c2c6cd]",
             )}
           >
             {n}
@@ -123,7 +138,7 @@ function MultipleChoiceCard({
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // ── 단답형 카드 ────────────────────────────────────────────────────────
@@ -133,39 +148,42 @@ function ShortAnswerCard({
   problem,
   answer,
 }: {
-  examId: number
-  problem: ProblemResponse
-  answer: ModelAnswerResponse | null
+  examId: number;
+  problem: ProblemResponse;
+  answer: ModelAnswerResponse | null;
 }) {
-  const qc = useQueryClient()
-  const [chips, setChips] = useState<string[]>(answer?.accepted_answers ?? [])
-  const [adding, setAdding] = useState(false)
-  const [inputVal, setInputVal] = useState('')
+  const qc = useQueryClient();
+  const [chips, setChips] = useState<string[]>(answer?.accepted_answers ?? []);
+  const [adding, setAdding] = useState(false);
+  const [inputVal, setInputVal] = useState("");
 
-  useEffect(() => { setChips(answer?.accepted_answers ?? []) }, [answer?.accepted_answers])
+  useEffect(() => {
+    setChips(answer?.accepted_answers ?? []);
+  }, [answer?.accepted_answers]);
 
   const mutation = useMutation({
     mutationFn: (accepted_answers: string[]) =>
       problemsApi.updateModelAnswer(problem.problem_id, { accepted_answers }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['model-answers', examId] }),
-    onError: () => toast.error('정답 저장에 실패했습니다.'),
-  })
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["model-answers", examId] }),
+    onError: () => toast.error("정답 저장에 실패했습니다."),
+  });
 
   const addChip = () => {
-    const val = inputVal.trim()
-    setInputVal('')
-    setAdding(false)
-    if (!val || chips.includes(val)) return
-    const next = [...chips, val]
-    setChips(next)
-    mutation.mutate(next)
-  }
+    const val = inputVal.trim();
+    setInputVal("");
+    setAdding(false);
+    if (!val || chips.includes(val)) return;
+    const next = [...chips, val];
+    setChips(next);
+    mutation.mutate(next);
+  };
 
   const removeChip = (idx: number) => {
-    const next = chips.filter((_, i) => i !== idx)
-    setChips(next)
-    mutation.mutate(next)
-  }
+    const next = chips.filter((_, i) => i !== idx);
+    setChips(next);
+    mutation.mutate(next);
+  };
 
   return (
     <div className="border border-[#ebedf1] rounded-[13px] p-[18px_20px]">
@@ -192,10 +210,13 @@ function ShortAnswerCard({
             <input
               autoFocus
               value={inputVal}
-              onChange={e => setInputVal(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') addChip()
-                if (e.key === 'Escape') { setAdding(false); setInputVal('') }
+              onChange={(e) => setInputVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") addChip();
+                if (e.key === "Escape") {
+                  setAdding(false);
+                  setInputVal("");
+                }
               }}
               className="h-[34px] px-[12px] border border-[#e2e4e9] rounded-[9px] text-[13.5px] outline-none focus:border-accent w-[140px] transition-colors"
               placeholder="정답 입력"
@@ -220,7 +241,7 @@ function ShortAnswerCard({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // ── 서술형 / 손코딩 카드 ───────────────────────────────────────────────
@@ -230,11 +251,11 @@ function OcrTypeCard({
   answer,
   onGoToOcr,
 }: {
-  problem: ProblemResponse
-  answer: ModelAnswerResponse | null
-  onGoToOcr: () => void
+  problem: ProblemResponse;
+  answer: ModelAnswerResponse | null;
+  onGoToOcr: () => void;
 }) {
-  const hasOcr = !!answer?.model_answer_text
+  const hasOcr = !!answer?.model_answer_text;
   return (
     <div className="border border-[#ebedf1] rounded-[13px] p-[18px_20px]">
       <CardHeader
@@ -261,22 +282,28 @@ function OcrTypeCard({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // ── SubStep3 ───────────────────────────────────────────────────────────
 
 interface SubStep3Props {
-  examId: number
-  onNext: () => void
-  onBack: () => void
-  onGoToOcr: () => void
-  isNextDisabled?: boolean
+  examId: number;
+  onNext: () => void;
+  onBack: () => void;
+  onGoToOcr: () => void;
+  isNextDisabled?: boolean;
 }
 
-export function SubStep3({ examId, onNext, onBack, onGoToOcr, isNextDisabled }: SubStep3Props) {
-  const { problems } = useProblems(examId)
-  const { modelAnswers } = useModelAnswerOcr(examId)
+export function SubStep3({
+  examId,
+  onNext,
+  onBack,
+  onGoToOcr,
+  isNextDisabled,
+}: SubStep3Props) {
+  const { problems } = useProblems(examId);
+  const { modelAnswers } = useModelAnswerOcr(examId);
 
   return (
     <>
@@ -291,7 +318,8 @@ export function SubStep3({ examId, onNext, onBack, onGoToOcr, isNextDisabled }: 
           </span>
         </div>
         <p className="text-[14px] text-[#71757e] mt-[5px]">
-          문제 유형별로 정답을 등록합니다 · 객관식·단답형은 자동 채점에 사용됩니다
+          문제 유형별로 정답을 등록합니다 · 객관식·단답형은 자동 채점에
+          사용됩니다
         </p>
       </div>
 
@@ -302,21 +330,37 @@ export function SubStep3({ examId, onNext, onBack, onGoToOcr, isNextDisabled }: 
             1단계에서 문제를 먼저 추가하세요
           </p>
         ) : (
-          problems.map(p => {
-            const answer = modelAnswers.find(a => a.problem_id === p.problem_id) ?? null
-            if (p.type === 'MULTIPLE_CHOICE') {
+          problems.map((p) => {
+            const answer =
+              modelAnswers.find((a) => a.problem_id === p.problem_id) ?? null;
+            if (p.type === "MULTIPLE_CHOICE") {
               return (
-                <MultipleChoiceCard key={p.problem_id} examId={examId} problem={p} answer={answer} />
-              )
+                <MultipleChoiceCard
+                  key={p.problem_id}
+                  examId={examId}
+                  problem={p}
+                  answer={answer}
+                />
+              );
             }
-            if (p.type === 'SHORT_ANSWER') {
+            if (p.type === "SHORT_ANSWER") {
               return (
-                <ShortAnswerCard key={p.problem_id} examId={examId} problem={p} answer={answer} />
-              )
+                <ShortAnswerCard
+                  key={p.problem_id}
+                  examId={examId}
+                  problem={p}
+                  answer={answer}
+                />
+              );
             }
             return (
-              <OcrTypeCard key={p.problem_id} problem={p} answer={answer} onGoToOcr={onGoToOcr} />
-            )
+              <OcrTypeCard
+                key={p.problem_id}
+                problem={p}
+                answer={answer}
+                onGoToOcr={onGoToOcr}
+              />
+            );
           })
         )}
       </div>
@@ -338,10 +382,16 @@ export function SubStep3({ examId, onNext, onBack, onGoToOcr, isNextDisabled }: 
         >
           다음: 루브릭 설정
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M9 5l7 7-7 7"
+              stroke="#fff"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
     </>
-  )
+  );
 }

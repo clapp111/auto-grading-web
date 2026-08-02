@@ -1,43 +1,43 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
-import { Document, Page, pdfjs } from 'react-pdf'
-import { Stage, Layer, Rect, Text, Line, Circle } from 'react-konva'
-import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react'
-import type { Region, Point } from '@/types/dto'
-import type { RegionShape } from '@/types/enums'
+import { useState, useRef, useEffect, useMemo } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import { Stage, Layer, Rect, Text, Line, Circle } from "react-konva";
+import { ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import type { Region, Point } from "@/types/dto";
+import type { RegionShape } from "@/types/enums";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url,
-).toString()
+).toString();
 
 export type DrawSelection =
-  | { shape: 'RECT'; bbox_region: Region }
-  | { shape: 'LASSO'; bbox_region: Region; polygon_points: Point[] }
+  | { shape: "RECT"; bbox_region: Region }
+  | { shape: "LASSO"; bbox_region: Region; polygon_points: Point[] };
 
 export interface RegionOverlay {
-  region: Region
-  label: string
-  color: string
-  shape?: RegionShape
-  polygon_points?: Point[]
+  region: Region;
+  label: string;
+  color: string;
+  shape?: RegionShape;
+  polygon_points?: Point[];
 }
 
 interface DrawRect {
-  x: number
-  y: number
-  w: number
-  h: number
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 interface PdfCanvasProps {
-  url: string | null
-  pageWidth?: number
-  regions?: RegionOverlay[]
-  drawMode?: 'rect' | 'lasso' | null
-  onDrawComplete?: (selection: DrawSelection) => void
-  currentPage?: number
-  onPageChange?: (page: number) => void
-  initialZoom?: number
+  url: string | null;
+  pageWidth?: number;
+  regions?: RegionOverlay[];
+  drawMode?: "rect" | "lasso" | null;
+  onDrawComplete?: (selection: DrawSelection) => void;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  initialZoom?: number;
 }
 
 export function PdfCanvas({
@@ -50,108 +50,116 @@ export function PdfCanvas({
   onPageChange,
   initialZoom = 1,
 }: PdfCanvasProps) {
-  const [numPages, setNumPages] = useState(0)
-  const [stageSize, setStageSize] = useState({ width: pageWidth, height: 600 })
-  const [zoom, setZoom] = useState(initialZoom)
+  const [numPages, setNumPages] = useState(0);
+  const [stageSize, setStageSize] = useState({ width: pageWidth, height: 600 });
+  const [zoom, setZoom] = useState(initialZoom);
 
   const changeZoom = (delta: number) =>
-    setZoom((z) => Math.min(3, Math.max(0.5, Math.round((z + delta) * 4) / 4)))
+    setZoom((z) => Math.min(3, Math.max(0.5, Math.round((z + delta) * 4) / 4)));
 
   // RECT 드래그 상태
-  const [drawing, setDrawing] = useState(false)
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 })
-  const [currentRect, setCurrentRect] = useState<DrawRect | null>(null)
+  const [drawing, setDrawing] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [currentRect, setCurrentRect] = useState<DrawRect | null>(null);
 
   // LASSO 폴리곤 상태
-  const [lassoVertices, setLassoVertices] = useState<{ x: number; y: number }[]>([])
-  const [lassoPreviewPos, setLassoPreviewPos] = useState<{ x: number; y: number } | null>(null)
+  const [lassoVertices, setLassoVertices] = useState<
+    { x: number; y: number }[]
+  >([]);
+  const [lassoPreviewPos, setLassoPreviewPos] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   // dblclick 핸들러에서 최신 vertices를 동기적으로 읽기 위한 ref
-  const lassoVerticesRef = useRef<{ x: number; y: number }[]>([])
+  const lassoVerticesRef = useRef<{ x: number; y: number }[]>([]);
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // 첫 번째 영역을 기준으로 스크롤 중앙 이동
   const regionKey = useMemo(
-    () => (regions[0] ? `${regions[0].region.x.toFixed(4)}-${regions[0].region.y.toFixed(4)}` : null),
+    () =>
+      regions[0]
+        ? `${regions[0].region.x.toFixed(4)}-${regions[0].region.y.toFixed(4)}`
+        : null,
     [regions],
-  )
+  );
   useEffect(() => {
-    if (!scrollRef.current || !regionKey || stageSize.height <= 0) return
-    const region = regions[0].region
-    if (region.page !== currentPage) return
-    const renderedW = pageWidth * zoom
-    const renderedH = stageSize.height
-    const cx = (region.x + region.w / 2) * renderedW
-    const cy = (region.y + region.h / 2) * renderedH
-    const el = scrollRef.current
-    el.scrollLeft = cx - el.clientWidth / 2
-    el.scrollTop = cy - el.clientHeight / 2
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regionKey, stageSize.height])
+    if (!scrollRef.current || !regionKey || stageSize.height <= 0) return;
+    const region = regions[0].region;
+    if (region.page !== currentPage) return;
+    const renderedW = pageWidth * zoom;
+    const renderedH = stageSize.height;
+    const cx = (region.x + region.w / 2) * renderedW;
+    const cy = (region.y + region.h / 2) * renderedH;
+    const el = scrollRef.current;
+    el.scrollLeft = cx - el.clientWidth / 2;
+    el.scrollTop = cy - el.clientHeight / 2;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionKey, stageSize.height]);
 
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
+    const el = containerRef.current;
+    if (!el) return;
     const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect
+      const { width, height } = entry.contentRect;
       if (width > 0 && height > 0)
-        setStageSize({ width: Math.round(width), height: Math.round(height) })
-    })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+        setStageSize({ width: Math.round(width), height: Math.round(height) });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Escape로 올가미 취소
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && drawMode === 'lasso') {
-        setLassoVertices([])
-        lassoVerticesRef.current = []
-        setLassoPreviewPos(null)
+      if (e.key === "Escape" && drawMode === "lasso") {
+        setLassoVertices([]);
+        lassoVerticesRef.current = [];
+        setLassoPreviewPos(null);
       }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [drawMode])
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawMode]);
 
   const getRelativePos = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
-  }
+    const rect = e.currentTarget.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
 
   // ── RECT 이벤트 ──────────────────────────────────────────────────────────
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (drawMode !== 'rect') return
-    const pos = getRelativePos(e)
-    setDrawing(true)
-    setStartPos(pos)
-    setCurrentRect({ x: pos.x, y: pos.y, w: 0, h: 0 })
-  }
+    if (drawMode !== "rect") return;
+    const pos = getRelativePos(e);
+    setDrawing(true);
+    setStartPos(pos);
+    setCurrentRect({ x: pos.x, y: pos.y, w: 0, h: 0 });
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const pos = getRelativePos(e)
-    if (drawMode === 'rect' && drawing) {
+    const pos = getRelativePos(e);
+    if (drawMode === "rect" && drawing) {
       setCurrentRect({
         x: Math.min(startPos.x, pos.x),
         y: Math.min(startPos.y, pos.y),
         w: Math.abs(pos.x - startPos.x),
         h: Math.abs(pos.y - startPos.y),
-      })
-    } else if (drawMode === 'lasso') {
-      setLassoPreviewPos(pos)
+      });
+    } else if (drawMode === "lasso") {
+      setLassoPreviewPos(pos);
     }
-  }
+  };
 
   const handleMouseUp = () => {
-    if (drawMode !== 'rect' || !drawing || !currentRect) return
-    setDrawing(false)
+    if (drawMode !== "rect" || !drawing || !currentRect) return;
+    setDrawing(false);
     if (currentRect.w > 10 && currentRect.h > 10) {
-      const sw = stageSize.width
-      const sh = stageSize.height
+      const sw = stageSize.width;
+      const sh = stageSize.height;
       onDrawComplete?.({
-        shape: 'RECT',
+        shape: "RECT",
         bbox_region: {
           page: currentPage,
           x: currentRect.x / sw,
@@ -159,42 +167,42 @@ export function PdfCanvas({
           w: currentRect.w / sw,
           h: currentRect.h / sh,
         },
-      })
+      });
     }
-    setCurrentRect(null)
-  }
+    setCurrentRect(null);
+  };
 
   const handleMouseLeave = () => {
-    if (drawMode === 'rect') handleMouseUp()
-    if (drawMode === 'lasso') setLassoPreviewPos(null)
-  }
+    if (drawMode === "rect") handleMouseUp();
+    if (drawMode === "lasso") setLassoPreviewPos(null);
+  };
 
   // ── LASSO 폴리곤 이벤트 ──────────────────────────────────────────────────
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (drawMode !== 'lasso') return
-    const pos = getRelativePos(e)
-    setLassoVertices(prev => {
-      const next = [...prev, pos]
-      lassoVerticesRef.current = next
-      return next
-    })
-  }
+    if (drawMode !== "lasso") return;
+    const pos = getRelativePos(e);
+    setLassoVertices((prev) => {
+      const next = [...prev, pos];
+      lassoVerticesRef.current = next;
+      return next;
+    });
+  };
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (drawMode !== 'lasso') return
-    e.stopPropagation()
+    if (drawMode !== "lasso") return;
+    e.stopPropagation();
 
     // dblclick 직전 두 번의 click 이벤트 중 마지막 것(두 번째 클릭)을 제거
-    const vertices = lassoVerticesRef.current.slice(0, -1)
+    const vertices = lassoVerticesRef.current.slice(0, -1);
 
     if (vertices.length >= 3) {
-      const sw = stageSize.width
-      const sh = stageSize.height
-      const xs = vertices.map(p => p.x)
-      const ys = vertices.map(p => p.y)
+      const sw = stageSize.width;
+      const sh = stageSize.height;
+      const xs = vertices.map((p) => p.x);
+      const ys = vertices.map((p) => p.y);
       onDrawComplete?.({
-        shape: 'LASSO',
+        shape: "LASSO",
         bbox_region: {
           page: currentPage,
           x: Math.min(...xs) / sw,
@@ -202,22 +210,22 @@ export function PdfCanvas({
           w: (Math.max(...xs) - Math.min(...xs)) / sw,
           h: (Math.max(...ys) - Math.min(...ys)) / sh,
         },
-        polygon_points: vertices.map(p => ({
+        polygon_points: vertices.map((p) => ({
           page: currentPage,
           x: p.x / sw,
           y: p.y / sh,
         })),
-      })
+      });
     }
 
-    setLassoVertices([])
-    lassoVerticesRef.current = []
-    setLassoPreviewPos(null)
-  }
+    setLassoVertices([]);
+    lassoVerticesRef.current = [];
+    setLassoPreviewPos(null);
+  };
 
   // ── 렌더 ─────────────────────────────────────────────────────────────────
 
-  const isLassoInProgress = drawMode === 'lasso' && lassoVertices.length > 0
+  const isLassoInProgress = drawMode === "lasso" && lassoVertices.length > 0;
 
   return (
     <div className="flex flex-col h-full select-none">
@@ -252,7 +260,9 @@ export function PdfCanvas({
             >
               <ChevronLeft size={15} />
             </button>
-            <span className="text-[12.5px] text-[#8a8f99]">{currentPage} / {numPages} 페이지</span>
+            <span className="text-[12.5px] text-[#8a8f99]">
+              {currentPage} / {numPages} 페이지
+            </span>
             <button
               className="text-[#8a8f99] disabled:opacity-30 hover:text-[#5f636b] transition-colors"
               disabled={currentPage >= numPages}
@@ -273,7 +283,7 @@ export function PdfCanvas({
       <div
         ref={scrollRef}
         className="flex-1 flex items-start justify-center overflow-auto"
-        style={{ cursor: drawMode ? 'crosshair' : 'default' }}
+        style={{ cursor: drawMode ? "crosshair" : "default" }}
       >
         <div
           ref={containerRef}
@@ -294,7 +304,9 @@ export function PdfCanvas({
                   className="flex items-center justify-center bg-white"
                   style={{ width: pageWidth * zoom, height: stageSize.height }}
                 >
-                  <span className="text-[13px] text-[#9aa0ab]">PDF 로딩 중...</span>
+                  <span className="text-[13px] text-[#9aa0ab]">
+                    PDF 로딩 중...
+                  </span>
                 </div>
               }
               error={
@@ -302,7 +314,9 @@ export function PdfCanvas({
                   className="flex items-center justify-center bg-white"
                   style={{ width: pageWidth, height: 400 }}
                 >
-                  <span className="text-[13px] text-red-400">PDF를 불러오지 못했습니다</span>
+                  <span className="text-[13px] text-red-400">
+                    PDF를 불러오지 못했습니다
+                  </span>
                 </div>
               }
             >
@@ -314,75 +328,113 @@ export function PdfCanvas({
               />
             </Document>
           ) : (
-            <div style={{ width: pageWidth, height: 500 }} className="bg-white" />
+            <div
+              style={{ width: pageWidth, height: 500 }}
+              className="bg-white"
+            />
           )}
 
           {url && (
-            <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+            <div className="absolute inset-0" style={{ pointerEvents: "none" }}>
               <Stage width={stageSize.width} height={stageSize.height}>
                 <Layer>
                   {/* 저장된 오버레이 */}
                   {regions
-                    .filter(r => r.region.page === currentPage)
+                    .filter((r) => r.region.page === currentPage)
                     .flatMap((r, i) => {
-                      const rx = r.region.x * stageSize.width
-                      const ry = r.region.y * stageSize.height
-                      const rw = r.region.w * stageSize.width
-                      const rh = r.region.h * stageSize.height
-                      const shape = r.shape ?? 'RECT'
+                      const rx = r.region.x * stageSize.width;
+                      const ry = r.region.y * stageSize.height;
+                      const rw = r.region.w * stageSize.width;
+                      const rh = r.region.h * stageSize.height;
+                      const shape = r.shape ?? "RECT";
 
                       const shapeEl =
-                        shape === 'LASSO' && r.polygon_points && r.polygon_points.length > 2 ? (
+                        shape === "LASSO" &&
+                        r.polygon_points &&
+                        r.polygon_points.length > 2 ? (
                           <Line
                             key={`fill-${i}`}
                             points={r.polygon_points
-                              .filter(p => p.page === currentPage)
-                              .flatMap(p => [p.x * stageSize.width, p.y * stageSize.height])}
+                              .filter((p) => p.page === currentPage)
+                              .flatMap((p) => [
+                                p.x * stageSize.width,
+                                p.y * stageSize.height,
+                              ])}
                             stroke={r.color}
                             strokeWidth={1}
-                            fill={r.color + '1f'}
+                            fill={r.color + "1f"}
                             closed
                           />
                         ) : (
                           <Rect
                             key={`fill-${i}`}
-                            x={rx} y={ry}
-                            width={rw} height={rh}
-                            stroke={r.color} strokeWidth={1}
-                            fill={r.color + '1f'} cornerRadius={5}
+                            x={rx}
+                            y={ry}
+                            width={rw}
+                            height={rh}
+                            stroke={r.color}
+                            strokeWidth={1}
+                            fill={r.color + "1f"}
+                            cornerRadius={5}
                           />
-                        )
+                        );
 
                       return [
                         shapeEl,
                         <Rect
                           key={`lbl-bg-${i}`}
-                          x={rx - (/[가-힣]/.test(r.label) ? r.label.length * 12 + 14 : r.label.length * 7.2 + 14)} y={ry}
-                          width={/[가-힣]/.test(r.label) ? r.label.length * 12 + 14 : r.label.length * 7.2 + 14} height={18}
-                          fill={r.color} cornerRadius={4}
+                          x={
+                            rx -
+                            (/[가-힣]/.test(r.label)
+                              ? r.label.length * 12 + 14
+                              : r.label.length * 7.2 + 14)
+                          }
+                          y={ry}
+                          width={
+                            /[가-힣]/.test(r.label)
+                              ? r.label.length * 12 + 14
+                              : r.label.length * 7.2 + 14
+                          }
+                          height={18}
+                          fill={r.color}
+                          cornerRadius={4}
                         />,
                         <Text
                           key={`lbl-txt-${i}`}
-                          x={rx - (/[가-힣]/.test(r.label) ? r.label.length * 12 + 7 : r.label.length * 7.2 + 7)} y={ry + 4}
-                          text={r.label} fontSize={11} fontStyle="bold" fill="#fff"
+                          x={
+                            rx -
+                            (/[가-힣]/.test(r.label)
+                              ? r.label.length * 12 + 7
+                              : r.label.length * 7.2 + 7)
+                          }
+                          y={ry + 4}
+                          text={r.label}
+                          fontSize={11}
+                          fontStyle="bold"
+                          fill="#fff"
                         />,
-                      ]
+                      ];
                     })}
 
                   {/* RECT 드로잉 프리뷰 */}
                   {currentRect && (
                     <Rect
-                      x={currentRect.x} y={currentRect.y}
-                      width={currentRect.w} height={currentRect.h}
-                      stroke="#4F46E5" strokeWidth={1}
-                      fill="#4F46E520" dash={[6, 3]} cornerRadius={4}
+                      x={currentRect.x}
+                      y={currentRect.y}
+                      width={currentRect.w}
+                      height={currentRect.h}
+                      stroke="#4F46E5"
+                      strokeWidth={1}
+                      fill="#4F46E520"
+                      dash={[6, 3]}
+                      cornerRadius={4}
                     />
                   )}
 
                   {/* LASSO 폴리곤 프리뷰 — 기존 엣지 */}
                   {lassoVertices.length >= 2 && (
                     <Line
-                      points={lassoVertices.flatMap(p => [p.x, p.y])}
+                      points={lassoVertices.flatMap((p) => [p.x, p.y])}
                       stroke="#4F46E5"
                       strokeWidth={1}
                       closed={false}
@@ -409,9 +461,10 @@ export function PdfCanvas({
                   {lassoVertices.map((p, i) => (
                     <Circle
                       key={`v-${i}`}
-                      x={p.x} y={p.y}
+                      x={p.x}
+                      y={p.y}
                       radius={i === 0 ? 5 : 3.5}
-                      fill={i === 0 ? '#fff' : '#4F46E5'}
+                      fill={i === 0 ? "#fff" : "#4F46E5"}
                       stroke="#4F46E5"
                       strokeWidth={1}
                     />
@@ -423,5 +476,5 @@ export function PdfCanvas({
         </div>
       </div>
     </div>
-  )
+  );
 }
