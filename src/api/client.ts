@@ -15,7 +15,9 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const url = err.config?.url ?? ''
+    const isAuthRequest = url.includes('/auth/login') || url.includes('/auth/signup')
+    if (err.response?.status === 401 && !isAuthRequest) {
       useAuthStore.getState().clearAuth()
       window.location.href = '/'
     }
