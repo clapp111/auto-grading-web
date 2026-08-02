@@ -212,6 +212,11 @@ export default function Step4Page() {
   const [isAdvancing, setIsAdvancing] = useState(false)
 
   const handleNext = async () => {
+    // 과거/미래 Step에서는 진행 상태 갱신(advance) 없이 이동만
+    if (exam?.step !== 4) {
+      navigate(`/exam/${examId}/step/5`)
+      return
+    }
     setIsAdvancing(true)
     try {
       await examsApi.advance(examId, 4)
