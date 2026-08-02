@@ -40,7 +40,10 @@ export function useStep5(examId: number) {
     enabled: !!examId,
   });
   const progress = progressRes?.data ?? null;
-  const students = progress?.students ?? [];
+  const students = useMemo(
+    () => progress?.students ?? [],
+    [progress?.students],
+  );
   const selectedStudent = students[selectedStudentIdx] ?? null;
 
   // 답안지 목록 (student_id → answer_sheet_id 매핑)
@@ -78,6 +81,7 @@ export function useStep5(examId: number) {
     if (!selectedResult) return;
     setLocalText(selectedResult.text ?? "");
     setLocalChoice(selectedResult.marked_choice ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 다른 결과로 전환할 때만 동기화 (편집 중 로컬값 보존)
   }, [selectedResult?.ocr_result_id]);
 
   // 답안지 PDF URL

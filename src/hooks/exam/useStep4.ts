@@ -94,8 +94,10 @@ export function useStep4(examId: number) {
   });
 
   const firstSheetRegions: AnswerRegionResponse[] = firstRegionsRes?.data ?? [];
-  const selectedSheetRegions: AnswerRegionResponse[] =
-    selectedRegionsRes?.data ?? [];
+  const selectedSheetRegions: AnswerRegionResponse[] = useMemo(
+    () => selectedRegionsRes?.data ?? [],
+    [selectedRegionsRes?.data],
+  );
 
   const layoutMode = "FIXED" as const;
   const isFixedMode = layoutMode === "FIXED";

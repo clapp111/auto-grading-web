@@ -9,7 +9,17 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "oxlint",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,css,md,html}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -50,6 +60,8 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vitejs/plugin-react": "^6.0.2",
     "autoprefixer": "^10.5.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.3.0",
     "oxlint": "^1.69.0",
     "postcss": "^8.5.15",
     "prettier": "3.9.6",

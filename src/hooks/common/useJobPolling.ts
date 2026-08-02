@@ -47,6 +47,7 @@ export function useJobPolling({
     if (!job) return;
     if (job.status === "DONE") onCompleteRef.current?.(job);
     if (job.status === "FAILED") onErrorRef.current?.(job);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- status가 바뀔 때만 콜백 실행 (job은 폴링마다 새 참조로 바뀜)
   }, [job?.job_id, job?.status]);
 
   return { job, isRunning, isCompleted, isFailed, ...query };

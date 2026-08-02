@@ -296,10 +296,10 @@ function AutoGradeDetailView({
       ]
     : [];
 
+  const targetPage = problemRegion?.bbox_region?.page;
   useEffect(() => {
-    if (problemRegion?.bbox_region?.page)
-      setCurrentPage(problemRegion.bbox_region.page);
-  }, [problemRegion?.answer_region_id]);
+    if (targetPage) setCurrentPage(targetPage);
+  }, [problemRegion?.answer_region_id, targetPage]);
 
   const handleSelect = (correct: boolean) => {
     if (isCurrentConfirmed && !editMode) return;
