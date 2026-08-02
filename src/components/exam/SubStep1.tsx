@@ -1,13 +1,24 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { Trash2, GripVertical, ChevronDown, Upload, ScanText } from 'lucide-react'
-import { toast } from 'sonner'
-import { PdfCanvas, type RegionOverlay, type DrawSelection } from './PdfCanvas'
-import { useProblems } from '../../hooks/exam/useProblems'
-import { TYPE_COLORS, TYPE_TEXT_COLORS, TYPE_LABELS_KO, PROBLEM_TYPES } from '../../types/constants'
-import type { ProblemResponse } from '@/types/dto'
-import type { ProblemType } from '@/types/enums'
-import { cn } from '@/lib/utils'
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useDropzone } from "react-dropzone";
+import {
+  Trash2,
+  GripVertical,
+  ChevronDown,
+  Upload,
+  ScanText,
+} from "lucide-react";
+import { toast } from "sonner";
+import { PdfCanvas, type RegionOverlay, type DrawSelection } from "./PdfCanvas";
+import { useProblems } from "../../hooks/exam/useProblems";
+import {
+  TYPE_COLORS,
+  TYPE_TEXT_COLORS,
+  TYPE_LABELS_KO,
+  PROBLEM_TYPES,
+} from "../../types/constants";
+import type { ProblemResponse } from "@/types/dto";
+import type { ProblemType } from "@/types/enums";
+import { cn } from "@/lib/utils";
 
 // ── 유형 드롭다운 ──────────────────────────────────────────────────────
 
@@ -15,29 +26,29 @@ function TypeDropdown({
   value,
   onChange,
 }: {
-  value: ProblemType
-  onChange: (t: ProblemType) => void
+  value: ProblemType;
+  onChange: (t: ProblemType) => void;
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
     const h = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
-  }, [open])
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(p => !p)}
+        onClick={() => setOpen((p) => !p)}
         className="flex items-center gap-[5px] h-[28px] px-[11px] rounded-[8px] text-[12.5px] font-bold"
         style={{
-          background: TYPE_COLORS[value] + '20',
+          background: TYPE_COLORS[value] + "20",
           color: TYPE_TEXT_COLORS[value],
         }}
       >
@@ -47,11 +58,14 @@ function TypeDropdown({
 
       {open && (
         <div className="absolute left-0 top-[calc(100%+4px)] bg-white border border-[#e0e3e9] rounded-[10px] shadow-lg py-[5px] w-[112px] z-20">
-          {PROBLEM_TYPES.map(t => (
+          {PROBLEM_TYPES.map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => { onChange(t); setOpen(false) }}
+              onClick={() => {
+                onChange(t);
+                setOpen(false);
+              }}
               className="w-full px-3 py-[8px] text-left text-[13px] hover:bg-[#f7f8fa] flex items-center gap-[8px]"
             >
               <span
@@ -66,7 +80,7 @@ function TypeDropdown({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ── 문제 카드 ──────────────────────────────────────────────────────────
@@ -83,50 +97,56 @@ function ProblemCard({
   onRunOcr,
   onTextSave,
 }: {
-  problem: ProblemResponse
-  onTypeChange: (t: ProblemType) => void
-  onScoreChange: (score: number) => void
-  onLabelChange: (label: string) => void
-  onDelete: () => void
-  isExpanded: boolean
-  onToggle: () => void
-  ocrRunning: boolean
-  onRunOcr: () => void
-  onTextSave: (text: string) => void
+  problem: ProblemResponse;
+  onTypeChange: (t: ProblemType) => void;
+  onScoreChange: (score: number) => void;
+  onLabelChange: (label: string) => void;
+  onDelete: () => void;
+  isExpanded: boolean;
+  onToggle: () => void;
+  ocrRunning: boolean;
+  onRunOcr: () => void;
+  onTextSave: (text: string) => void;
 }) {
-  const [scoreStr, setScoreStr] = useState(String(problem.max_score))
-  const [labelStr, setLabelStr] = useState(problem.label)
-  const [editingLabel, setEditingLabel] = useState(false)
-  const [localText, setLocalText] = useState(problem.problem_text ?? '')
+  const [scoreStr, setScoreStr] = useState(String(problem.max_score));
+  const [labelStr, setLabelStr] = useState(problem.label);
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [localText, setLocalText] = useState(problem.problem_text ?? "");
 
-  useEffect(() => { setScoreStr(String(problem.max_score)) }, [problem.max_score])
-  useEffect(() => { setLabelStr(problem.label) }, [problem.label])
-  useEffect(() => { setLocalText(problem.problem_text ?? '') }, [problem.problem_text])
+  useEffect(() => {
+    setScoreStr(String(problem.max_score));
+  }, [problem.max_score]);
+  useEffect(() => {
+    setLabelStr(problem.label);
+  }, [problem.label]);
+  useEffect(() => {
+    setLocalText(problem.problem_text ?? "");
+  }, [problem.problem_text]);
 
   const handleScoreBlur = () => {
-    const n = parseInt(scoreStr, 10)
+    const n = parseInt(scoreStr, 10);
     if (!isNaN(n) && n > 0) {
-      onScoreChange(n)
+      onScoreChange(n);
     } else {
-      setScoreStr(String(problem.max_score))
+      setScoreStr(String(problem.max_score));
     }
-  }
+  };
 
   const handleLabelBlur = () => {
-    setEditingLabel(false)
-    const trimmed = labelStr.trim()
+    setEditingLabel(false);
+    const trimmed = labelStr.trim();
     if (trimmed && trimmed !== problem.label) {
-      onLabelChange(trimmed)
+      onLabelChange(trimmed);
     } else {
-      setLabelStr(problem.label)
+      setLabelStr(problem.label);
     }
-  }
+  };
 
   return (
     <div
       className={cn(
-        'border rounded-[11px] transition-colors',
-        isExpanded ? 'border-accent/40 bg-accent/[.02]' : 'border-[#ebedf1]',
+        "border rounded-[11px] transition-colors",
+        isExpanded ? "border-accent/40 bg-accent/[.02]" : "border-[#ebedf1]",
       )}
     >
       {/* 카드 헤더 — 클릭 시 확장/축소 */}
@@ -137,46 +157,55 @@ function ProblemCard({
         <GripVertical
           size={15}
           className="text-[#c2c6cd] flex-none cursor-grab"
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         />
         <span
           className="w-[10px] h-[10px] rounded-full flex-none"
           style={{ background: TYPE_COLORS[problem.type] }}
         />
-        <div onClick={e => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()}>
           <TypeDropdown value={problem.type} onChange={onTypeChange} />
         </div>
         {editingLabel ? (
           <input
             autoFocus
             value={labelStr}
-            onChange={e => setLabelStr(e.target.value)}
+            onChange={(e) => setLabelStr(e.target.value)}
             onBlur={handleLabelBlur}
-            onKeyDown={e => {
-              if (e.key === 'Enter') handleLabelBlur()
-              if (e.key === 'Escape') { setLabelStr(problem.label); setEditingLabel(false) }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleLabelBlur();
+              if (e.key === "Escape") {
+                setLabelStr(problem.label);
+                setEditingLabel(false);
+              }
             }}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className="text-[15px] font-bold text-[#15171d] outline-none border-b border-accent bg-transparent w-[60px]"
           />
         ) : (
           <span
             className="text-[15px] font-bold text-[#15171d] hover:text-accent transition-colors"
-            onClick={e => { e.stopPropagation(); setEditingLabel(true) }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingLabel(true);
+            }}
             title="클릭해서 라벨 수정"
           >
             {problem.label}
           </span>
         )}
 
-        <div className="ml-auto flex items-center gap-[6px] flex-none" onClick={e => e.stopPropagation()}>
+        <div
+          className="ml-auto flex items-center gap-[6px] flex-none"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center border border-[#e2e4e9] rounded-[8px] h-[30px] px-[10px] bg-white">
             <input
               type="text"
               value={scoreStr}
-              onChange={e => setScoreStr(e.target.value)}
+              onChange={(e) => setScoreStr(e.target.value)}
               onBlur={handleScoreBlur}
-              onKeyDown={e => e.key === 'Enter' && handleScoreBlur()}
+              onKeyDown={(e) => e.key === "Enter" && handleScoreBlur()}
               className="w-[28px] text-right text-[15px] font-bold text-[#15171d] font-mono outline-none bg-transparent"
             />
             <span className="text-[12px] text-[#9aa0ab] ml-[3px]">점</span>
@@ -195,58 +224,62 @@ function ProblemCard({
       {isExpanded && (
         <div className="px-[14px] pb-[14px] border-t border-[#f0f1f4]">
           <div className="flex items-center justify-between mt-[12px] mb-[8px]">
-            <span className="text-[12px] font-semibold text-[#71757e]">문제 텍스트</span>
+            <span className="text-[12px] font-semibold text-[#71757e]">
+              문제 텍스트
+            </span>
             <button
               type="button"
               onClick={onRunOcr}
               disabled={!problem.region || ocrRunning}
               className={cn(
-                'flex items-center gap-[5px] h-[26px] px-[10px] rounded-[7px] text-[12px] font-semibold transition-colors',
+                "flex items-center gap-[5px] h-[26px] px-[10px] rounded-[7px] text-[12px] font-semibold transition-colors",
                 !problem.region
-                  ? 'text-[#c2c6cd] bg-[#f4f5f7] cursor-not-allowed'
+                  ? "text-[#c2c6cd] bg-[#f4f5f7] cursor-not-allowed"
                   : ocrRunning
-                    ? 'text-accent bg-accent/10 cursor-not-allowed'
-                    : 'text-accent bg-accent/10 hover:bg-accent/20',
+                    ? "text-accent bg-accent/10 cursor-not-allowed"
+                    : "text-accent bg-accent/10 hover:bg-accent/20",
               )}
             >
               <ScanText size={12} />
-              {ocrRunning ? 'OCR 처리 중...' : 'OCR 실행'}
+              {ocrRunning ? "OCR 처리 중..." : "OCR 실행"}
             </button>
           </div>
           <textarea
             value={localText}
-            onChange={e => setLocalText(e.target.value)}
+            onChange={(e) => setLocalText(e.target.value)}
             onBlur={() => {
-              const trimmed = localText.trimEnd()
-              if (trimmed !== (problem.problem_text ?? '')) {
-                onTextSave(trimmed)
+              const trimmed = localText.trimEnd();
+              if (trimmed !== (problem.problem_text ?? "")) {
+                onTextSave(trimmed);
               }
             }}
             placeholder={
               problem.region
-                ? 'OCR을 실행하거나 직접 입력하세요'
-                : '먼저 PDF에서 영역을 지정하세요'
+                ? "OCR을 실행하거나 직접 입력하세요"
+                : "먼저 PDF에서 영역을 지정하세요"
             }
             disabled={!problem.region}
             rows={10}
-            onKeyDown={e => {
-              if (e.key === 'Tab') {
-                e.preventDefault()
-                const el = e.currentTarget
-                const start = el.selectionStart
-                const end = el.selectionEnd
-                const next = localText.slice(0, start) + '    ' + localText.slice(end)
-                setLocalText(next)
+            onKeyDown={(e) => {
+              if (e.key === "Tab") {
+                e.preventDefault();
+                const el = e.currentTarget;
+                const start = el.selectionStart;
+                const end = el.selectionEnd;
+                const next =
+                  localText.slice(0, start) + "    " + localText.slice(end);
+                setLocalText(next);
                 requestAnimationFrame(() => {
-                  el.selectionStart = start + 4
-                  el.selectionEnd = start + 4
-                })
+                  el.selectionStart = start + 4;
+                  el.selectionEnd = start + 4;
+                });
               }
             }}
             className={cn(
-              'w-full resize-none rounded-[8px] border border-[#e2e4e9] px-[11px] py-[9px] text-[13px] leading-[1.7] text-[#3a3e46] outline-none transition-colors bg-white',
-              'focus:border-accent/50 placeholder:text-[#c2c6cd]',
-              !problem.region && 'bg-[#f7f8fa] cursor-not-allowed text-[#c2c6cd]',
+              "w-full resize-none rounded-[8px] border border-[#e2e4e9] px-[11px] py-[9px] text-[13px] leading-[1.7] text-[#3a3e46] outline-none transition-colors bg-white",
+              "focus:border-accent/50 placeholder:text-[#c2c6cd]",
+              !problem.region &&
+                "bg-[#f7f8fa] cursor-not-allowed text-[#c2c6cd]",
             )}
           />
           {!problem.region && (
@@ -257,61 +290,82 @@ function ProblemCard({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ── SubStep1 ───────────────────────────────────────────────────────────
 
 interface SubStep1Props {
-  examId: number
-  initialSheetUrl?: string | null
-  onNext: () => void
-  onSkip: () => void
+  examId: number;
+  initialSheetUrl?: string | null;
+  onNext: () => void;
+  onSkip: () => void;
 }
 
-export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Props) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedProblemId, setSelectedProblemId] = useState<number | null>(null)
+export function SubStep1({
+  examId,
+  initialSheetUrl,
+  onNext,
+  onSkip,
+}: SubStep1Props) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProblemId, setSelectedProblemId] = useState<number | null>(
+    null,
+  );
 
-  const { problems, sheetUrl, sheetUploading, uploadSheet, create, update, remove, runOcr, ocrProblemId } =
-    useProblems(examId, initialSheetUrl)
+  const {
+    problems,
+    sheetUrl,
+    sheetUploading,
+    uploadSheet,
+    create,
+    update,
+    remove,
+    runOcr,
+    ocrProblemId,
+  } = useProblems(examId, initialSheetUrl);
 
   const onDrop = useCallback(
     async (files: File[]) => {
-      const file = files[0]
-      if (!file) return
+      const file = files[0];
+      if (!file) return;
       try {
-        await uploadSheet(file)
+        await uploadSheet(file);
       } catch {
-        toast.error('파일 업로드에 실패했습니다.')
+        toast.error("파일 업로드에 실패했습니다.");
       }
     },
     [uploadSheet],
-  )
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'application/pdf': ['.pdf'] },
+    accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
     disabled: sheetUploading,
-  })
+  });
 
   const handleDrawComplete = async (selection: DrawSelection) => {
-    const nextLabel = `Q${problems.length + 1}`
+    const nextLabel = `Q${problems.length + 1}`;
     try {
-      await create({ label: nextLabel, type: 'MULTIPLE_CHOICE', max_score: 5, region: selection.bbox_region })
+      await create({
+        label: nextLabel,
+        type: "MULTIPLE_CHOICE",
+        max_score: 5,
+        region: selection.bbox_region,
+      });
     } catch {
       // error toast handled in hook
     }
-  }
+  };
 
   const regionOverlays: RegionOverlay[] = problems
-    .filter(p => p.region)
-    .map(p => ({
+    .filter((p) => p.region)
+    .map((p) => ({
       region: p.region!,
       label: p.label,
       color: TYPE_COLORS[p.type],
-    }))
+    }));
 
   return (
     <>
@@ -350,7 +404,15 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
               className="flex items-center gap-[6px] h-[34px] px-[13px] border border-accent bg-accent rounded-[9px] text-white text-[13px] font-semibold shadow-[0_2px_6px_rgba(79,70,229,.4)] whitespace-nowrap"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                <rect
+                  x="4"
+                  y="4"
+                  width="16"
+                  height="16"
+                  rx="2"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                />
               </svg>
               사각형
             </button>
@@ -371,11 +433,11 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
               <div
                 {...getRootProps()}
                 className={cn(
-                  'w-[430px] h-[500px] bg-white rounded-[6px] border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors',
+                  "w-[430px] h-[500px] bg-white rounded-[6px] border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors",
                   isDragActive
-                    ? 'border-accent bg-accent/[.04]'
-                    : 'border-[#d0d3d9] hover:border-accent',
-                  sheetUploading && 'pointer-events-none opacity-60',
+                    ? "border-accent bg-accent/[.04]"
+                    : "border-[#d0d3d9] hover:border-accent",
+                  sheetUploading && "pointer-events-none opacity-60",
                 )}
               >
                 <input {...getInputProps()} />
@@ -384,7 +446,7 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
                 </div>
                 <div className="text-center">
                   <p className="text-[14.5px] font-semibold text-[#3a3e46]">
-                    {sheetUploading ? '업로드 중...' : '문제지 PDF 업로드'}
+                    {sheetUploading ? "업로드 중..." : "문제지 PDF 업로드"}
                   </p>
                   <p className="text-[12.5px] text-[#9aa0ab] mt-1">
                     클릭하거나 파일을 드래그하세요
@@ -399,8 +461,10 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
         <div className="flex-1 border-l border-[#f0f1f4] flex flex-col min-w-0">
           <div className="px-[22px] py-[18px] pb-[12px] flex-none">
             <p className="text-[14.5px] font-bold text-[#15171d]">
-              지정된 문제{' '}
-              <span className="text-[#9aa0ab] font-semibold">{problems.length}</span>
+              지정된 문제{" "}
+              <span className="text-[#9aa0ab] font-semibold">
+                {problems.length}
+              </span>
             </p>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-[9px]">
@@ -409,21 +473,27 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
                 PDF에서 문제 영역을 드래그해 지정하세요
               </p>
             ) : (
-              problems.map(p => (
+              problems.map((p) => (
                 <ProblemCard
                   key={p.problem_id}
                   problem={p}
-                  onTypeChange={type => update(p.problem_id, { type })}
-                  onScoreChange={max_score => update(p.problem_id, { max_score })}
-                  onLabelChange={label => update(p.problem_id, { label })}
+                  onTypeChange={(type) => update(p.problem_id, { type })}
+                  onScoreChange={(max_score) =>
+                    update(p.problem_id, { max_score })
+                  }
+                  onLabelChange={(label) => update(p.problem_id, { label })}
                   onDelete={() => remove(p.problem_id)}
                   isExpanded={selectedProblemId === p.problem_id}
                   onToggle={() =>
-                    setSelectedProblemId(id => (id === p.problem_id ? null : p.problem_id))
+                    setSelectedProblemId((id) =>
+                      id === p.problem_id ? null : p.problem_id,
+                    )
                   }
                   ocrRunning={ocrProblemId === p.problem_id}
                   onRunOcr={() => runOcr(p.problem_id)}
-                  onTextSave={text => update(p.problem_id, { problem_text: text })}
+                  onTextSave={(text) =>
+                    update(p.problem_id, { problem_text: text })
+                  }
                 />
               ))
             )}
@@ -441,10 +511,16 @@ export function SubStep1({ examId, initialSheetUrl, onNext, onSkip }: SubStep1Pr
         >
           다음: 모범답안 OCR
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M9 5l7 7-7 7"
+              stroke="#fff"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
     </>
-  )
+  );
 }

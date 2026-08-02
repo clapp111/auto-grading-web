@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { Trash2, Upload, LayoutGrid } from 'lucide-react'
-import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { IdRegionModal } from '@/components/exam/IdRegionModal'
-import { SheetPreviewModal } from '@/components/exam/SheetPreviewModal'
-import { useAnswerSheets } from '@/hooks/exam/useAnswerSheets'
-import { examsApi } from '@/api/exams'
-import type { AnswerSheetResponse } from '@/types/dto'
-import { cn } from '@/lib/utils'
+import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Trash2, Upload, LayoutGrid } from "lucide-react";
+import { ExamSidebar } from "@/components/common/ExamSidebar";
+import { IdRegionModal } from "@/components/exam/IdRegionModal";
+import { SheetPreviewModal } from "@/components/exam/SheetPreviewModal";
+import { useAnswerSheets } from "@/hooks/exam/useAnswerSheets";
+import { examsApi } from "@/api/exams";
+import type { AnswerSheetResponse } from "@/types/dto";
+import { cn } from "@/lib/utils";
 
 // ── Sheet row ─────────────────────────────────────────────────────────
 
@@ -19,43 +19,48 @@ function SheetRow({
   onPatch,
   onPreview,
 }: {
-  sheet: AnswerSheetResponse
-  onDelete: () => void
-  onPatch: (body: { name: string | null; student_no: string | null }) => void
-  onPreview: () => void
+  sheet: AnswerSheetResponse;
+  onDelete: () => void;
+  onPatch: (body: { name: string | null; student_no: string | null }) => void;
+  onPreview: () => void;
 }) {
-  const nameRef = useRef<HTMLInputElement>(null)
-  const noRef = useRef<HTMLInputElement>(null)
-  const [nameVal, setNameVal] = useState(sheet.student_name ?? '')
-  const [noVal, setNoVal] = useState(sheet.student_no ?? '')
+  const nameRef = useRef<HTMLInputElement>(null);
+  const noRef = useRef<HTMLInputElement>(null);
+  const [nameVal, setNameVal] = useState(sheet.student_name ?? "");
+  const [noVal, setNoVal] = useState(sheet.student_no ?? "");
 
   // Sync server-side updates (OCR 등) when the field isn't focused
   useEffect(() => {
-    if (document.activeElement !== nameRef.current) setNameVal(sheet.student_name ?? '')
-  }, [sheet.student_name])
+    if (document.activeElement !== nameRef.current)
+      setNameVal(sheet.student_name ?? "");
+  }, [sheet.student_name]);
   useEffect(() => {
-    if (document.activeElement !== noRef.current) setNoVal(sheet.student_no ?? '')
-  }, [sheet.student_no])
+    if (document.activeElement !== noRef.current)
+      setNoVal(sheet.student_no ?? "");
+  }, [sheet.student_no]);
 
-  const isComplete = !!nameVal.trim() && !!noVal.trim()
+  const isComplete = !!nameVal.trim() && !!noVal.trim();
 
   const handleBlur = () => {
-    const name = nameVal.trim() || null
-    const student_no = noVal.trim() || null
-    const prevName = sheet.student_name || null
-    const prevNo = sheet.student_no || null
+    const name = nameVal.trim() || null;
+    const student_no = noVal.trim() || null;
+    const prevName = sheet.student_name || null;
+    const prevNo = sheet.student_no || null;
     if (name !== prevName || student_no !== prevNo) {
-      onPatch({ name, student_no })
+      onPatch({ name, student_no });
     }
-  }
+  };
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
     reset: () => void,
   ) => {
-    if (e.key === 'Enter') e.currentTarget.blur()
-    if (e.key === 'Escape') { reset(); e.currentTarget.blur() }
-  }
+    if (e.key === "Enter") e.currentTarget.blur();
+    if (e.key === "Escape") {
+      reset();
+      e.currentTarget.blur();
+    }
+  };
 
   return (
     <div className="flex items-center border-b border-[#f2f3f6] group hover:bg-[#fafbfc]">
@@ -77,13 +82,15 @@ function SheetRow({
           value={nameVal}
           onChange={(e) => setNameVal(e.target.value)}
           onBlur={handleBlur}
-          onKeyDown={(e) => handleKeyDown(e, () => setNameVal(sheet.student_name ?? ''))}
-          placeholder={!nameVal.trim() ? '이름 미인식' : undefined}
+          onKeyDown={(e) =>
+            handleKeyDown(e, () => setNameVal(sheet.student_name ?? ""))
+          }
+          placeholder={!nameVal.trim() ? "이름 미인식" : undefined}
           className={cn(
-            'w-full h-[38px] rounded-[9px] px-[12px] text-[14px] bg-white text-[#15171d] font-medium outline-none transition-colors',
+            "w-full h-[38px] rounded-[9px] px-[12px] text-[14px] bg-white text-[#15171d] font-medium outline-none transition-colors",
             !nameVal.trim()
-              ? 'border-[1.5px] border-[#f0b4b4] placeholder:text-[#cf9a9a] focus:border-accent'
-              : 'border border-[#e4e6eb] focus:border-accent',
+              ? "border-[1.5px] border-[#f0b4b4] placeholder:text-[#cf9a9a] focus:border-accent"
+              : "border border-[#e4e6eb] focus:border-accent",
           )}
         />
       </div>
@@ -95,13 +102,15 @@ function SheetRow({
           value={noVal}
           onChange={(e) => setNoVal(e.target.value)}
           onBlur={handleBlur}
-          onKeyDown={(e) => handleKeyDown(e, () => setNoVal(sheet.student_no ?? ''))}
-          placeholder={!noVal.trim() ? '— — —' : undefined}
+          onKeyDown={(e) =>
+            handleKeyDown(e, () => setNoVal(sheet.student_no ?? ""))
+          }
+          placeholder={!noVal.trim() ? "— — —" : undefined}
           className={cn(
-            'w-full h-[38px] rounded-[9px] px-[12px] text-[14px] bg-white text-[#15171d] font-medium font-mono outline-none transition-colors',
+            "w-full h-[38px] rounded-[9px] px-[12px] text-[14px] bg-white text-[#15171d] font-medium font-mono outline-none transition-colors",
             !noVal.trim()
-              ? 'border-[1.5px] border-[#f0b4b4] placeholder:text-[#cf9a9a] focus:border-accent'
-              : 'border border-[#e4e6eb] focus:border-accent',
+              ? "border-[1.5px] border-[#f0b4b4] placeholder:text-[#cf9a9a] focus:border-accent"
+              : "border border-[#e4e6eb] focus:border-accent",
           )}
         />
       </div>
@@ -110,23 +119,34 @@ function SheetRow({
       <div className="w-[150px] px-[16px] py-[10px] flex items-center justify-between">
         <span
           className={cn(
-            'inline-flex items-center gap-[5px] text-[12.5px] font-bold px-[11px] py-[5px] rounded-full',
+            "inline-flex items-center gap-[5px] text-[12.5px] font-bold px-[11px] py-[5px] rounded-full",
             isComplete
-              ? 'bg-[#e7f6ee] text-[#138a5a]'
-              : 'bg-[#fdecec] text-[#c0392b]',
+              ? "bg-[#e7f6ee] text-[#138a5a]"
+              : "bg-[#fdecec] text-[#c0392b]",
           )}
         >
           {isComplete ? (
             <>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M5 13l4 4L19 7"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               입력 완료
             </>
           ) : (
             <>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                />
               </svg>
               미인식
             </>
@@ -141,44 +161,46 @@ function SheetRow({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // ── Step3Page ─────────────────────────────────────────────────────────
 
 export default function Step3Page() {
-  const { examId: examIdStr } = useParams<{ examId: string }>()
-  const examId = Number(examIdStr)
-  const navigate = useNavigate()
-  const qc = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isAdvancing, setIsAdvancing] = useState(false)
+  const { examId: examIdStr } = useParams<{ examId: string }>();
+  const examId = Number(examIdStr);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const handleNext = async () => {
     // 과거/미래 Step에서는 진행 상태 갱신(advance) 없이 이동만
     if (examRes?.data?.step !== 3) {
-      navigate(`/exam/${examId}/step/4`)
-      return
+      navigate(`/exam/${examId}/step/4`);
+      return;
     }
-    setIsAdvancing(true)
+    setIsAdvancing(true);
     try {
-      await examsApi.advance(examId, 3)
-      await qc.invalidateQueries({ queryKey: ['exam', examId] })
-      navigate(`/exam/${examId}/step/4`)
+      await examsApi.advance(examId, 3);
+      await qc.invalidateQueries({ queryKey: ["exam", examId] });
+      navigate(`/exam/${examId}/step/4`);
     } catch {
-      toast.error('진행 상태 업데이트에 실패했습니다.')
+      toast.error("진행 상태 업데이트에 실패했습니다.");
     } finally {
-      setIsAdvancing(false)
+      setIsAdvancing(false);
     }
-  }
-  const [regionModalOpen, setRegionModalOpen] = useState(false)
-  const [previewSheet, setPreviewSheet] = useState<AnswerSheetResponse | null>(null)
+  };
+  const [regionModalOpen, setRegionModalOpen] = useState(false);
+  const [previewSheet, setPreviewSheet] = useState<AnswerSheetResponse | null>(
+    null,
+  );
 
   const { data: examRes } = useQuery({
-    queryKey: ['exam', examId],
+    queryKey: ["exam", examId],
     queryFn: () => examsApi.get(examId),
     enabled: !!examId,
-  })
+  });
 
   const {
     sheets,
@@ -191,23 +213,28 @@ export default function Step3Page() {
     patchSheet,
     saveIdRegions,
     savingIdRegions,
-  } = useAnswerSheets(examId)
+  } = useAnswerSheets(examId);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
+    const files = Array.from(e.target.files ?? []);
     if (files.length > 0) {
-      uploadSheets(files)
-      e.target.value = ''
+      uploadSheets(files);
+      e.target.value = "";
     }
-  }
+  };
 
-  const firstSheet = sheets[0] ?? null
+  const firstSheet = sheets[0] ?? null;
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
       {/* 사이드바 */}
       <aside className="w-[252px] shrink-0">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={3} examStep={examRes?.data?.step} />
+        <ExamSidebar
+          examId={examId}
+          examName={examRes?.data?.name}
+          currentStep={3}
+          examStep={examRes?.data?.step}
+        />
       </aside>
 
       {/* 메인 */}
@@ -218,13 +245,13 @@ export default function Step3Page() {
             학생 정보 입력 / 매칭
           </h2>
           <p className="text-[14px] text-[#71757e] mt-[5px]">
-            첫 답안지에서 이름·학번 영역을 지정하면 이후 답안지가 자동 인식됩니다
+            첫 답안지에서 이름·학번 영역을 지정하면 이후 답안지가 자동
+            인식됩니다
           </p>
         </div>
 
         {/* Body */}
         <div className="flex-1 flex flex-col min-h-0 px-[30px] pt-[22px]">
-
           {/* Upload + Summary */}
           <div className="flex gap-[14px] mb-[18px] flex-none">
             {/* Upload zone */}
@@ -236,7 +263,9 @@ export default function Step3Page() {
                 <Upload size={20} className="text-accent" />
               </div>
               <div className="flex-1">
-                <p className="text-[14.5px] font-bold text-[#15171d]">답안지 업로드</p>
+                <p className="text-[14.5px] font-bold text-[#15171d]">
+                  답안지 업로드
+                </p>
                 <p className="text-[12.5px] text-[#9aa0ab] mt-[2px]">
                   PDF 또는 이미지 (JPG/PNG) · 학생별 파일
                 </p>
@@ -245,9 +274,12 @@ export default function Step3Page() {
                 type="button"
                 disabled={uploading}
                 className="h-[38px] px-[16px] border border-accent bg-accent/[.08] rounded-[10px] text-accent text-[13.5px] font-bold hover:bg-accent/[.14] disabled:opacity-50 transition-colors"
-                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click() }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
               >
-                {uploading ? '업로드 중...' : '파일 선택'}
+                {uploading ? "업로드 중..." : "파일 선택"}
               </button>
               <input
                 ref={fileInputRef}
@@ -261,13 +293,21 @@ export default function Step3Page() {
 
             {/* Summary card */}
             <div className="w-[200px] border border-[#ebedf1] rounded-[13px] px-[18px] py-[14px] flex flex-col justify-center">
-              <p className="text-[12.5px] text-[#9aa0ab] font-medium">입력 / 업로드</p>
+              <p className="text-[12.5px] text-[#9aa0ab] font-medium">
+                입력 / 업로드
+              </p>
               <div className="flex items-baseline gap-[6px] mt-[3px]">
-                <span className="text-[24px] font-extrabold text-[#15171d]">{matchedCount}</span>
-                <span className="text-[14px] text-[#9aa0ab] font-semibold">/ {sheets.length}</span>
+                <span className="text-[24px] font-extrabold text-[#15171d]">
+                  {matchedCount}
+                </span>
+                <span className="text-[14px] text-[#9aa0ab] font-semibold">
+                  / {sheets.length}
+                </span>
               </div>
               {recognizing && (
-                <p className="text-[11.5px] text-accent font-semibold mt-[6px]">인식 중...</p>
+                <p className="text-[11.5px] text-accent font-semibold mt-[6px]">
+                  인식 중...
+                </p>
               )}
             </div>
           </div>
@@ -277,8 +317,10 @@ export default function Step3Page() {
             {/* Table toolbar */}
             <div className="flex items-center justify-between mb-[12px] flex-none">
               <p className="text-[15px] font-bold text-[#15171d]">
-                인식된 학생 정보{' '}
-                <span className="font-medium text-[#9aa0ab] text-[13px]">· {sheets.length}명</span>
+                인식된 학생 정보{" "}
+                <span className="font-medium text-[#9aa0ab] text-[13px]">
+                  · {sheets.length}명
+                </span>
               </p>
               <button
                 type="button"
@@ -322,7 +364,9 @@ export default function Step3Page() {
                       key={sheet.answer_sheet_id}
                       sheet={sheet}
                       onDelete={() => deleteSheet(sheet.answer_sheet_id)}
-                      onPatch={(body) => patchSheet(sheet.answer_sheet_id, body)}
+                      onPatch={(body) =>
+                        patchSheet(sheet.answer_sheet_id, body)
+                      }
                       onPreview={() => setPreviewSheet(sheet)}
                     />
                   ))
@@ -349,7 +393,13 @@ export default function Step3Page() {
           >
             다음: 답안 영역 지정
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M9 5l7 7-7 7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M9 5l7 7-7 7"
+                stroke="#fff"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
         </div>
@@ -376,5 +426,5 @@ export default function Step3Page() {
         />
       )}
     </div>
-  )
+  );
 }

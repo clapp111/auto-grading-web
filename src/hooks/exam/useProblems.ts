@@ -1,76 +1,94 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { usePresignedUpload } from '@/hooks/common/usePresignedUpload'
-import { useJobPolling } from '@/hooks/common/useJobPolling'
-import { problemsApi, type ProblemCreateRequest, type ProblemUpdateRequest } from '@/api/problems'
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { usePresignedUpload } from "@/hooks/common/usePresignedUpload";
+import { useJobPolling } from "@/hooks/common/useJobPolling";
+import {
+  problemsApi,
+  type ProblemCreateRequest,
+  type ProblemUpdateRequest,
+} from "@/api/problems";
 
 export function useProblems(examId: number, initialSheetUrl?: string | null) {
-  const qc = useQueryClient()
-  const { upload, uploading: sheetUploading } = usePresignedUpload()
-  const [sheetBlobUrl, setSheetBlobUrl] = useState<string | null>(null)
-  const [activeOcrJobId, setActiveOcrJobId] = useState<number | null>(null)
-  const [ocrProblemId, setOcrProblemId] = useState<number | null>(null)
+  const qc = useQueryClient();
+  const { upload, uploading: sheetUploading } = usePresignedUpload();
+  const [sheetBlobUrl, setSheetBlobUrl] = useState<string | null>(null);
+  const [activeOcrJobId, setActiveOcrJobId] = useState<number | null>(null);
+  const [ocrProblemId, setOcrProblemId] = useState<number | null>(null);
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['problems', examId] })
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["problems", examId] });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['problems', examId],
-    queryFn: () => problemsApi.list(examId).then(r => r.data ?? []),
+    queryKey: ["problems", examId],
+    queryFn: () => problemsApi.list(examId).then((r) => r.data ?? []),
     enabled: !!examId,
-  })
+  });
 
   const uploadSheet = async (file: File) => {
-    const res = await problemsApi.getProblemSheetUploadUrl(examId, file.name, file.type)
-    if (!res.data) { toast.error('업로드 URL 발급에 실패했습니다.'); return }
-    await upload(res.data, file)
-    setSheetBlobUrl(URL.createObjectURL(file))
-  }
+    const res = await problemsApi.getProblemSheetUploadUrl(
+      examId,
+      file.name,
+      file.type,
+    );
+    if (!res.data) {
+      toast.error("업로드 URL 발급에 실패했습니다.");
+      return;
+    }
+    await upload(res.data, file);
+    setSheetBlobUrl(URL.createObjectURL(file));
+  };
 
   const createMutation = useMutation({
-    mutationFn: (body: ProblemCreateRequest) => problemsApi.create(examId, body),
+    mutationFn: (body: ProblemCreateRequest) =>
+      problemsApi.create(examId, body),
     onSuccess: invalidate,
-    onError: () => toast.error('문제 추가에 실패했습니다.'),
-  })
+    onError: () => toast.error("문제 추가에 실패했습니다."),
+  });
 
   const updateMutation = useMutation({
-    mutationFn: ({ problemId, body }: { problemId: number; body: ProblemUpdateRequest }) =>
-      problemsApi.update(problemId, body),
+    mutationFn: ({
+      problemId,
+      body,
+    }: {
+      problemId: number;
+      body: ProblemUpdateRequest;
+    }) => problemsApi.update(problemId, body),
     onSuccess: invalidate,
-    onError: () => toast.error('문제 수정에 실패했습니다.'),
-  })
+    onError: () => toast.error("문제 수정에 실패했습니다."),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: (problemId: number) => problemsApi.delete(problemId),
     onSuccess: invalidate,
-    onError: () => toast.error('문제 삭제에 실패했습니다.'),
-  })
+    onError: () => toast.error("문제 삭제에 실패했습니다."),
+  });
 
   const ocrMutation = useMutation({
     mutationFn: (problemId: number) => problemsApi.runProblemOcr(problemId),
     onSuccess: (res, problemId) => {
       if (res.data) {
-        setActiveOcrJobId(res.data.job_id)
-        setOcrProblemId(problemId)
+        setActiveOcrJobId(res.data.job_id);
+        setOcrProblemId(problemId);
       }
     },
-    onError: () => toast.error('OCR 실행에 실패했습니다.'),
-  })
+    onError: () => toast.error("OCR 실행에 실패했습니다."),
+  });
 
   useJobPolling({
     jobId: activeOcrJobId ? String(activeOcrJobId) : null,
     onComplete: () => {
-      invalidate()
-      setActiveOcrJobId(null)
-      setOcrProblemId(null)
-      toast.success('문제 OCR이 완료되었습니다.')
+      invalidate();
+      setActiveOcrJobId(null);
+      setOcrProblemId(null);
+      toast.success("문제 OCR이 완료되었습니다.");
     },
     onError: () => {
-      setActiveOcrJobId(null)
-      setOcrProblemId(null)
-      toast.error('OCR에 실패했습니다.')
+      setActiveOcrJobId(null);
+      setOcrProblemId(null);
+      toast.error("OCR에 실패했습니다.");
     },
-  })
+  });
 
   return {
     problems: data ?? [],
@@ -84,5 +102,5 @@ export function useProblems(examId: number, initialSheetUrl?: string | null) {
     remove: deleteMutation.mutate,
     runOcr: ocrMutation.mutate,
     ocrProblemId,
-  }
+  };
 }

@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface AppLayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  return <div className="min-h-screen bg-[#f7f8fa]">{children}</div>
+  return <div className="min-h-screen bg-[#f7f8fa]">{children}</div>;
 }

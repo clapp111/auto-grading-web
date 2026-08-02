@@ -1,105 +1,116 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ExamSidebar } from '@/components/common/ExamSidebar'
-import { gradingApi } from '@/api/grading'
-import { examsApi } from '@/api/exams'
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ExamSidebar } from "@/components/common/ExamSidebar";
+import { gradingApi } from "@/api/grading";
+import { examsApi } from "@/api/exams";
 
-const ACCENT = '#4F46E5'
-const DIST_STEP = 5
+const ACCENT = "#4F46E5";
+const DIST_STEP = 5;
 
 function buildDistribution(totalScores: number[], maxTotal: number) {
-  if (maxTotal <= 0 || totalScores.length === 0) return []
+  if (maxTotal <= 0 || totalScores.length === 0) return [];
 
-  const bins: { start: number; end: number; count: number }[] = []
-  let start = 0
+  const bins: { start: number; end: number; count: number }[] = [];
+  let start = 0;
   while (start <= maxTotal) {
-    const end = Math.min(start + DIST_STEP - 1, maxTotal)
-    bins.push({ start, end, count: 0 })
-    if (end >= maxTotal) break
-    start += DIST_STEP
+    const end = Math.min(start + DIST_STEP - 1, maxTotal);
+    bins.push({ start, end, count: 0 });
+    if (end >= maxTotal) break;
+    start += DIST_STEP;
   }
 
   for (const score of totalScores) {
-    const clamped = Math.min(Math.max(score, 0), maxTotal)
-    const idx = bins.findIndex((b) => clamped >= b.start && clamped <= b.end)
-    if (idx >= 0) bins[idx].count++
+    const clamped = Math.min(Math.max(score, 0), maxTotal);
+    const idx = bins.findIndex((b) => clamped >= b.start && clamped <= b.end);
+    if (idx >= 0) bins[idx].count++;
   }
 
   return bins.map((b) => ({
     label: b.start === b.end ? `${b.start}` : `${b.start}-${b.end}`,
     count: b.count,
-  }))
+  }));
 }
 
 function calcStdDev(values: number[]): number {
-  if (values.length < 2) return 0
-  const mean = values.reduce((a, b) => a + b, 0) / values.length
-  return Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length)
+  if (values.length < 2) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  return Math.sqrt(
+    values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length,
+  );
 }
 
 export default function Step7Page() {
-  const { examId: examIdStr } = useParams<{ examId: string }>()
-  const examId = Number(examIdStr)
-  const navigate = useNavigate()
+  const { examId: examIdStr } = useParams<{ examId: string }>();
+  const examId = Number(examIdStr);
+  const navigate = useNavigate();
 
   const { data: examRes } = useQuery({
-    queryKey: ['exam', examId],
+    queryKey: ["exam", examId],
     queryFn: () => examsApi.get(examId),
     enabled: !!examId,
-  })
+  });
 
   const { data: statsRes } = useQuery({
-    queryKey: ['statistics', examId],
+    queryKey: ["statistics", examId],
     queryFn: () => gradingApi.getStatistics(examId),
     enabled: !!examId,
-  })
+  });
 
   const { data: resultsRes } = useQuery({
-    queryKey: ['results', examId],
+    queryKey: ["results", examId],
     queryFn: () => gradingApi.getResults(examId),
     enabled: !!examId,
-  })
+  });
 
-  const stats = statsRes?.data
-  const examResult = resultsRes?.data
-  const problems = examResult?.problems ?? []
-  const students = examResult?.students ?? []
+  const stats = statsRes?.data;
+  const examResult = resultsRes?.data;
+  const problems = examResult?.problems ?? [];
+  const students = examResult?.students ?? [];
 
-  const maxTotal = problems.reduce((s, p) => s + p.max_score, 0)
-  const totalScores = students.map((s) => s.total_score)
-  const sd = totalScores.length > 0 ? calcStdDev(totalScores) : null
+  const maxTotal = problems.reduce((s, p) => s + p.max_score, 0);
+  const totalScores = students.map((s) => s.total_score);
+  const sd = totalScores.length > 0 ? calcStdDev(totalScores) : null;
 
-  const distribution = buildDistribution(totalScores, maxTotal)
-  const maxCount = Math.max(...distribution.map((d) => d.count), 1)
+  const distribution = buildDistribution(totalScores, maxTotal);
+  const maxCount = Math.max(...distribution.map((d) => d.count), 1);
 
   const handleExportCsv = async () => {
-    const blob = await gradingApi.exportCsv(examId)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `exam_${examId}_results.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+    const blob = await gradingApi.exportCsv(examId);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `exam_${examId}_results.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const statCards = [
     {
-      label: '평균',
-      value: stats != null ? stats.average_score.toFixed(1) : '—',
-      suffix: maxTotal > 0 ? ` / ${maxTotal}` : '',
+      label: "평균",
+      value: stats != null ? stats.average_score.toFixed(1) : "—",
+      suffix: maxTotal > 0 ? ` / ${maxTotal}` : "",
     },
-    { label: '최고', value: stats != null ? String(stats.highest_score) : '—' },
-    { label: '최저', value: stats != null ? String(stats.lowest_score) : '—' },
-    { label: '표준편차', value: sd != null ? sd.toFixed(1) : '—' },
-    { label: '응시', value: stats != null ? String(stats.total_students) : '—', unit: '명' },
-  ]
+    { label: "최고", value: stats != null ? String(stats.highest_score) : "—" },
+    { label: "최저", value: stats != null ? String(stats.lowest_score) : "—" },
+    { label: "표준편차", value: sd != null ? sd.toFixed(1) : "—" },
+    {
+      label: "응시",
+      value: stats != null ? String(stats.total_students) : "—",
+      unit: "명",
+    },
+  ];
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-white print:h-auto print:overflow-visible">
       <aside className="w-[252px] shrink-0 print:hidden">
-        <ExamSidebar examId={examId} examName={examRes?.data?.name} currentStep={7} examStep={examRes?.data?.step} />
+        <ExamSidebar
+          examId={examId}
+          examName={examRes?.data?.name}
+          currentStep={7}
+          examStep={examRes?.data?.step}
+        />
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
@@ -107,7 +118,9 @@ export default function Step7Page() {
         <div className="px-[30px] py-[24px] pb-[20px] border-b border-[#f0f1f4] flex items-start justify-between flex-none">
           <div>
             <div className="flex items-center gap-[10px]">
-              <h2 className="text-[22px] font-extrabold text-[#15171d] tracking-[-0.02em]">성적 검토</h2>
+              <h2 className="text-[22px] font-extrabold text-[#15171d] tracking-[-0.02em]">
+                성적 검토
+              </h2>
               <span className="text-[12px] font-bold text-[#138a5a] bg-[#e7f6ee] px-[9px] py-[3px] rounded-[20px]">
                 채점 완료
               </span>
@@ -157,15 +170,24 @@ export default function Step7Page() {
           {/* Stat cards */}
           <div className="flex gap-[14px] mb-[22px]">
             {statCards.map(({ label, value, suffix, unit }) => (
-              <div key={label} className="flex-1 border border-[#ebedf1] rounded-[13px] px-[18px] py-[16px]">
-                <div className="text-[12.5px] text-[#9aa0ab] font-semibold">{label}</div>
+              <div
+                key={label}
+                className="flex-1 border border-[#ebedf1] rounded-[13px] px-[18px] py-[16px]"
+              >
+                <div className="text-[12.5px] text-[#9aa0ab] font-semibold">
+                  {label}
+                </div>
                 <div className="text-[28px] font-extrabold text-[#15171d] mt-[3px] leading-none">
                   {value}
                   {suffix && (
-                    <span className="text-[14px] text-[#aab0ba] font-semibold">{suffix}</span>
+                    <span className="text-[14px] text-[#aab0ba] font-semibold">
+                      {suffix}
+                    </span>
                   )}
                   {unit && (
-                    <span className="text-[14px] text-[#aab0ba] font-semibold">{unit}</span>
+                    <span className="text-[14px] text-[#aab0ba] font-semibold">
+                      {unit}
+                    </span>
                   )}
                 </div>
               </div>
@@ -174,22 +196,32 @@ export default function Step7Page() {
 
           {/* Distribution chart */}
           <div className="border border-[#ebedf1] rounded-[13px] px-[22px] py-[20px] mb-[18px]">
-            <div className="text-[14.5px] font-bold text-[#15171d] mb-[18px]">점수 분포</div>
-            <div style={{ position: 'relative', height: '164px', marginBottom: '28px' }}>
+            <div className="text-[14.5px] font-bold text-[#15171d] mb-[18px]">
+              점수 분포
+            </div>
+            <div
+              style={{
+                position: "relative",
+                height: "164px",
+                marginBottom: "28px",
+              }}
+            >
               <div className="flex items-end gap-[14px] h-full">
                 {distribution.length === 0 ? (
                   <div className="flex-1 flex items-end justify-center pb-[4px]">
-                    <span className="text-[13px] text-[#c2c6cd]">데이터 없음</span>
+                    <span className="text-[13px] text-[#c2c6cd]">
+                      데이터 없음
+                    </span>
                   </div>
                 ) : (
                   distribution.map((d) => {
-                    const hPct = Math.max((d.count / maxCount) * 100, 2)
-                    const isMax = d.count === maxCount
+                    const hPct = Math.max((d.count / maxCount) * 100, 2);
+                    const isMax = d.count === maxCount;
                     const bg = isMax
                       ? ACCENT
                       : d.count >= maxCount * 0.6
                         ? `${ACCENT}aa`
-                        : `${ACCENT}44`
+                        : `${ACCENT}44`;
                     return (
                       <div
                         key={d.label}
@@ -200,20 +232,20 @@ export default function Step7Page() {
                         </span>
                         <div
                           style={{
-                            width: '100%',
+                            width: "100%",
                             height: `${hPct}%`,
-                            borderRadius: '6px 6px 0 0',
+                            borderRadius: "6px 6px 0 0",
                             background: bg,
                           }}
                         />
                         <span
                           className="absolute text-[12px] text-[#aab0ba] font-mono whitespace-nowrap"
-                          style={{ bottom: '-24px' }}
+                          style={{ bottom: "-24px" }}
                         >
                           {d.label}
                         </span>
                       </div>
-                    )
+                    );
                   })
                 )}
               </div>
@@ -226,14 +258,23 @@ export default function Step7Page() {
               <div className="min-w-max">
                 {/* Header */}
                 <div className="flex items-center bg-[#fafbfc] border-b border-[#eef0f3] text-[12.5px] text-[#8a8f99] font-bold">
-                  <div className="sticky left-0 z-10 bg-[#fafbfc] w-[130px] shrink-0 px-[18px] py-[12px]">이름</div>
-                  <div className="sticky left-[130px] z-10 bg-[#fafbfc] w-[120px] shrink-0 px-[16px] py-[12px] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)]">학번</div>
+                  <div className="sticky left-0 z-10 bg-[#fafbfc] w-[130px] shrink-0 px-[18px] py-[12px]">
+                    이름
+                  </div>
+                  <div className="sticky left-[130px] z-10 bg-[#fafbfc] w-[120px] shrink-0 px-[16px] py-[12px] shadow-[2px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                    학번
+                  </div>
                   {problems.map((p) => (
-                    <div key={p.problem_id} className="w-[70px] shrink-0 px-[16px] py-[12px]">
+                    <div
+                      key={p.problem_id}
+                      className="w-[70px] shrink-0 px-[16px] py-[12px]"
+                    >
                       {p.label}
                     </div>
                   ))}
-                  <div className="sticky right-0 z-10 bg-[#fafbfc] w-[90px] shrink-0 px-[16px] py-[12px] shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.08)]">총점</div>
+                  <div className="sticky right-0 z-10 bg-[#fafbfc] w-[90px] shrink-0 px-[16px] py-[12px] shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.08)]">
+                    총점
+                  </div>
                 </div>
 
                 {/* Rows */}
@@ -254,12 +295,17 @@ export default function Step7Page() {
                         {s.student_no}
                       </div>
                       {problems.map((p) => {
-                        const ps = s.problem_scores.find((ps) => ps.problem_id === p.problem_id)
+                        const ps = s.problem_scores.find(
+                          (ps) => ps.problem_id === p.problem_id,
+                        );
                         return (
-                          <div key={p.problem_id} className="w-[70px] shrink-0 px-[16px] py-[11px]">
-                            {ps?.score != null ? ps.score : '—'}
+                          <div
+                            key={p.problem_id}
+                            className="w-[70px] shrink-0 px-[16px] py-[11px]"
+                          >
+                            {ps?.score != null ? ps.score : "—"}
                           </div>
-                        )
+                        );
                       })}
                       <div className="sticky right-0 z-10 bg-white w-[90px] shrink-0 px-[16px] py-[11px] font-extrabold text-[#15171d] shadow-[-2px_0_6px_-2px_rgba(0,0,0,0.08)]">
                         {s.total_score}
@@ -284,5 +330,5 @@ export default function Step7Page() {
         </div>
       </main>
     </div>
-  )
+  );
 }

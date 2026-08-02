@@ -1,9 +1,14 @@
-import type { ApiResponse, JobStartedResponse, OcrProgressResponse, OcrResultResponse } from '@/types/dto'
-import { apiClient } from './client'
+import type {
+  ApiResponse,
+  JobStartedResponse,
+  OcrProgressResponse,
+  OcrResultResponse,
+} from "@/types/dto";
+import { apiClient } from "./client";
 
 export interface UpdateOcrResultBody {
-  text?: string | null
-  marked_choice?: number | null
+  text?: string | null;
+  marked_choice?: number | null;
 }
 
 export const ocrApi = {
@@ -19,7 +24,9 @@ export const ocrApi = {
 
   getStudentResults: (studentId: number) =>
     apiClient
-      .get<ApiResponse<OcrResultResponse[]>>(`/students/${studentId}/ocr-results`)
+      .get<ApiResponse<OcrResultResponse[]>>(
+        `/students/${studentId}/ocr-results`,
+      )
       .then((r) => r.data),
 
   updateResult: (resultId: number, body: UpdateOcrResultBody) =>
@@ -36,4 +43,4 @@ export const ocrApi = {
     apiClient
       .post<ApiResponse<JobStartedResponse>>(`/answer-sheets/${sheetId}/ocr`)
       .then((r) => r.data),
-}
+};
