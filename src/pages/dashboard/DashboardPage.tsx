@@ -9,13 +9,11 @@ import {
   Plus,
   Search,
   SlidersHorizontal,
-  MoreHorizontal,
   Users,
   Clock,
   X,
-  Trash2,
-  UserPlus,
 } from "lucide-react";
+import { ExamActions } from "@/components/common/ExamActions";
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { authApi } from "@/api/auth";
@@ -279,7 +277,7 @@ const INVITE_STATUS_CFG: Record<
   CANCELED: { label: "취소됨", cls: "bg-[#f0f1f4] text-[#9aa0ab]" },
 };
 
-function InviteModal({
+export function InviteModal({
   exam,
   onClose,
 }: {
@@ -413,7 +411,7 @@ function InviteModal({
 }
 
 // ── Members Modal ──────────────────────────────────────────────────────────
-function MembersModal({
+export function MembersModal({
   exam,
   onClose,
 }: {
@@ -582,28 +580,10 @@ function ExamCard({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [membersOpen, setMembersOpen] = useState(false);
   const [isEntering, setIsEntering] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const cfg = STATUS_CFG[exam.step as ExamStep];
   const pctColor =
     cfg.pct === 100 ? "#138a5a" : cfg.pct === 0 ? "#aab0ba" : "#4b4f57";
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const h = (e: MouseEvent) => {
-      if (
-        !menuRef.current?.contains(e.target as Node) &&
-        !menuBtnRef.current?.contains(e.target as Node)
-      )
-        setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [menuOpen]);
 
   const enterExam = async () => {
     if (isEntering) return;
@@ -650,61 +630,7 @@ function ExamCard({
               </>
             )}
           </div>
-          <div className="relative">
-            <button
-              ref={menuBtnRef}
-              type="button"
-              className="text-[#c2c6cd] hover:text-[#9aa0ab] transition-colors p-1 -m-1 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen((p) => !p);
-              }}
-            >
-              <MoreHorizontal size={18} />
-            </button>
-            {menuOpen && (
-              <div
-                ref={menuRef}
-                className="absolute right-0 top-[calc(100%+4px)] bg-white border border-[#e0e3e9] rounded-[10px] shadow-lg py-[5px] w-[110px] z-10"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {exam.is_owner && (
-                  <button
-                    className="w-full px-3 py-[9px] text-left text-[13px] text-[#3a3e46] hover:bg-[#f7f8fa] flex items-center gap-2"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setInviteOpen(true);
-                    }}
-                  >
-                    <UserPlus size={13} />
-                    초대
-                  </button>
-                )}
-                <button
-                  className="w-full px-3 py-[9px] text-left text-[13px] text-[#3a3e46] hover:bg-[#f7f8fa] flex items-center gap-2"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setMembersOpen(true);
-                  }}
-                >
-                  <Users size={13} />
-                  채점자
-                </button>
-                {exam.is_owner && (
-                  <button
-                    className="w-full px-3 py-[9px] text-left text-[13px] text-[#c0392b] hover:bg-red-50 flex items-center gap-2"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      onDelete(exam.exam_id);
-                    }}
-                  >
-                    <Trash2 size={13} />
-                    삭제
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
+          <ExamActions exam={exam} onDelete={onDelete} />
         </div>
 
         <p className="text-[18px] font-bold text-[#15171d] tracking-[-0.02em] mb-[5px] line-clamp-1">
@@ -740,12 +666,6 @@ function ExamCard({
           </span>
         </div>
       </div>
-      {inviteOpen && (
-        <InviteModal exam={exam} onClose={() => setInviteOpen(false)} />
-      )}
-      {membersOpen && (
-        <MembersModal exam={exam} onClose={() => setMembersOpen(false)} />
-      )}
     </>
   );
 }
