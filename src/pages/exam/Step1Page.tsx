@@ -30,6 +30,9 @@ export default function Step1Page() {
   const goNext = async () => {
     if (urlSub < 3) {
       navigate(`/exam/${examId}/step/1/${urlSub + 1}`)
+    } else if (examRes?.data?.step !== 1) {
+      // 과거/미래 Step에서는 진행 상태 갱신(advance) 없이 이동만
+      navigate(`/exam/${examId}/step/2`)
     } else {
       setIsAdvancing(true)
       try {
