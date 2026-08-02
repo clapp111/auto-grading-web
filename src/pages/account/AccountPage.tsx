@@ -18,8 +18,15 @@ import {
 import { toast } from "sonner";
 import { useAuthStore } from "@/stores/authStore";
 import { authApi } from "@/api/auth";
+import { useMyInvitations } from "@/hooks/exam/useInvitations";
 import { cn } from "@/lib/utils";
 import AvatarCropModal from "./AvatarCropModal";
+
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 function dataUrlToBlob(dataUrl: string): Blob {
   const [header, base64] = dataUrl.split(",");
@@ -37,7 +44,7 @@ const ROLE_OPTIONS = [
   { value: "TA", label: "TA" },
 ] as const;
 
-type Tab = "profile" | "password" | "plan";
+type Tab = "profile" | "password" | "plan" | "invitations";
 
 // pending photo: null = no change, { type:'upload', dataUrl } = new photo, { type:'reset' } = cleared
 type PendingPhoto =
@@ -205,6 +212,10 @@ export default function AccountPage() {
       toast.error("비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인하세요."),
   });
 
+  const { invitations, accept, decline, respondingId } = useMyInvitations();
+  // 소유자가 취소한 초대(CANCELED)는 목록에서 제외
+  const visibleInvitations = invitations.filter((i) => i.status !== "CANCELED");
+
   const handleLogout = () => {
     clearAuth();
     navigate("/");
@@ -306,6 +317,12 @@ export default function AccountPage() {
             </button>
             <button className={navCls("plan")} onClick={() => setTab("plan")}>
               요금제 / 사용량
+            </button>
+            <button
+              className={navCls("invitations")}
+              onClick={() => setTab("invitations")}
+            >
+              초대
             </button>
 
             <button
@@ -607,6 +624,80 @@ export default function AccountPage() {
             {tab === "plan" && (
               <div className="flex items-center justify-center h-48 text-[14px] text-[#9aa0ab]">
                 준비 중입니다.
+              </div>
+            )}
+
+            {tab === "invitations" && (
+              <div className="max-w-[760px]">
+                <p className="text-[18px] font-extrabold text-[#15171d] tracking-[-0.02em]">
+                  받은 초대
+                </p>
+                <p className="text-[14px] text-[#9aa0ab] mt-[6px] mb-[24px]">
+                  다른 선생님이 공유한 시험의 채점에 참여해보세요
+                </p>
+
+                {visibleInvitations.length === 0 ? (
+                  <div className="flex items-center justify-center h-48 text-[14px] text-[#9aa0ab]">
+                    받은 초대가 없습니다.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-[16px]">
+                    {visibleInvitations.map((inv) => (
+                      <div
+                        key={inv.invitation_id}
+                        className="border border-[#ecedf1] rounded-[14px] p-[20px_24px]"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="text-[16px] font-bold text-[#15171d]">
+                              {inv.exam_name}
+                            </p>
+                            <div className="flex items-center gap-[8px] mt-[10px]">
+                              <div className="w-[22px] h-[22px] rounded-full bg-[#eceef2] flex items-center justify-center text-[11px] font-semibold text-[#71757e] flex-none">
+                                {inv.inviter_name[0]}
+                              </div>
+                              <span className="text-[13.5px] text-[#4b4f57] truncate">
+                                {inv.inviter_name} · {inv.inviter_email}
+                              </span>
+                            </div>
+                            <p className="text-[13px] text-[#9aa0ab] mt-[12px]">
+                              초대일 {fmtDate(inv.created_at)}
+                            </p>
+                          </div>
+
+                          <div className="flex-none">
+                            {inv.status === "PENDING" ? (
+                              <div className="flex items-center gap-[10px]">
+                                <button
+                                  onClick={() => decline(inv.invitation_id)}
+                                  disabled={respondingId === inv.invitation_id}
+                                  className="h-[40px] px-[18px] border border-[#e0e3e9] bg-white rounded-[10px] text-[14px] text-[#4b4f57] font-semibold hover:bg-[#f7f8fa] disabled:opacity-50 disabled:hover:bg-white transition-colors"
+                                >
+                                  거절
+                                </button>
+                                <button
+                                  onClick={() => accept(inv.invitation_id)}
+                                  disabled={respondingId === inv.invitation_id}
+                                  className="h-[40px] px-[20px] bg-accent text-white rounded-[10px] text-[14px] font-bold shadow-[0_4px_12px_rgba(79,70,229,.25)] disabled:opacity-50 transition-opacity"
+                                >
+                                  수락
+                                </button>
+                              </div>
+                            ) : inv.status === "ACCEPTED" ? (
+                              <span className="inline-flex items-center px-[12px] py-[6px] rounded-[8px] bg-[#e7f6ee] text-[13px] font-semibold text-[#138a5a]">
+                                수락됨
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-[12px] py-[6px] rounded-[8px] bg-[#f0f1f4] text-[13px] font-semibold text-[#9aa0ab]">
+                                거절됨
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

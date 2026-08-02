@@ -21,3 +21,4 @@ export type LayoutMode = "FIXED" | "FREE";
 export type OCRStatus = "RAW" | "REVIEWED";
 export type GradeStatus = "CONFIRMED" | "SUGGESTED";
 export type GradeMethod = "AUTO" | "LLM" | "HUMAN";
+export type InvitationStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "CANCELED";

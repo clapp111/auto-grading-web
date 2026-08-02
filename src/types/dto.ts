@@ -13,6 +13,7 @@ import type {
   GradeMethod,
   JobType,
   JobStatus,
+  InvitationStatus,
 } from "./enums";
 
 // ── 공통 ─────────────────────────────────────────────────────────────
@@ -88,6 +89,7 @@ export interface TokenResponse {
 // ── 시험 ──────────────────────────────────────────────────────────────
 export interface ExamResponse {
   exam_id: number;
+  is_owner: boolean;
   name: string;
   description: string | null;
   step: ExamStep;
@@ -268,6 +270,40 @@ export interface StudentDetailResultResponse {
   total_score: number;
   max_total_score: number;
   grades: GradeResponse[];
+}
+
+// ── 공동 채점자 초대 ──────────────────────────────────────────────────
+// 소유자 관점: 시험에 보낸 초대
+export interface ExamInvitationResponse {
+  invitation_id: number;
+  exam_id: number;
+  invitee_member_id: number;
+  invitee_name: string;
+  invitee_email: string;
+  status: InvitationStatus;
+  created_at: string;
+  responded_at: string | null;
+}
+
+// 초대받은 사용자 관점: 내가 받은 초대
+export interface InvitationResponse {
+  invitation_id: number;
+  exam_id: number;
+  exam_name: string;
+  inviter_name: string;
+  inviter_email: string;
+  status: InvitationStatus;
+  created_at: string;
+  responded_at: string | null;
+}
+
+// 시험 구성원(소유자 + 참여자)
+export interface ExamMemberResponse {
+  member_id: number;
+  name: string;
+  email: string;
+  is_owner: boolean;
+  joined_at: string | null;
 }
 
 // ── 비동기 Job ────────────────────────────────────────────────────────

@@ -1,5 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { examsApi } from "@/api/exams";
+import { ExamActions } from "@/components/common/ExamActions";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -32,7 +36,25 @@ export function ExamSidebar({
   examStep,
 }: ExamSidebarProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: examResponse } = useQuery({
+    queryKey: ["exam", examId],
+    queryFn: () => examsApi.get(examId),
+    enabled: !!examId,
+  });
+  const exam = examResponse?.data;
   const maxReachable = Math.max(examStep ?? 0, 1);
+
+  const deleteExam = async (id: number) => {
+    try {
+      await examsApi.delete(id);
+      await queryClient.invalidateQueries({ queryKey: ["exams"] });
+      toast.success("시험이 삭제되었습니다.");
+      navigate("/dashboard");
+    } catch {
+      toast.error("시험 삭제에 실패했습니다.");
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-white border-r border-[#ecedf1]">
@@ -55,9 +77,18 @@ export function ExamSidebar({
           <p className="text-[12px] text-[#9aa0ab] font-medium mb-[3px]">
             현재 시험
           </p>
-          <p className="text-[13.5px] font-semibold text-[#3a3e46] truncate">
-            {examName}
-          </p>
+          <div className="flex items-center gap-[6px] min-w-0">
+            <p className="flex-1 text-[13.5px] font-semibold text-[#3a3e46] truncate">
+              {examName}
+            </p>
+            {exam && (
+              <ExamActions
+                exam={exam}
+                onDelete={deleteExam}
+                triggerClassName="text-[#9aa0ab] hover:text-[#71757e] transition-colors p-1 -m-1 rounded flex-none"
+              />
+            )}
+          </div>
         </div>
       )}
 
