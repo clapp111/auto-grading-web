@@ -65,7 +65,7 @@ export function ExamSidebar({
               <button
                 type="button"
                 disabled={!isReachable}
-                onClick={() => navigate(`/exam/${examId}/step/${step}`)}
+                onClick={() => navigate(step === 1 ? `/exam/${examId}/step/1/1` : `/exam/${examId}/step/${step}`)}
                 className={cn(
                   'w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-[9px] text-left transition-colors',
                   isActive
