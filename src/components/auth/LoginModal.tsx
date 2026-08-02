@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Check } from "lucide-react";
-import { toast } from "sonner";
+import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/stores/authStore";
@@ -25,6 +25,7 @@ interface Props {
 
 export default function LoginModal({ open, onClose, onSwitchToSignup }: Props) {
   const [showPw, setShowPw] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
 
@@ -38,6 +39,7 @@ export default function LoginModal({ open, onClose, onSwitchToSignup }: Props) {
   const keepLogin = watch("keepLogin", false);
 
   const onSubmit = async (data: FormData) => {
+    setLoginError(null);
     try {
       const res = await authApi.login({
         email: data.email,
@@ -49,10 +51,13 @@ export default function LoginModal({ open, onClose, onSwitchToSignup }: Props) {
       onClose();
       navigate("/");
     } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "이메일 또는 비밀번호가 올바르지 않습니다.",
+      const fallback = "이메일 또는 비밀번호가 올바르지 않습니다.";
+      const apiMessage = isAxiosError(err)
+        ? err.response?.data?.error?.message
+        : undefined;
+      setLoginError(
+        apiMessage ??
+          (err instanceof Error && !isAxiosError(err) ? err.message : fallback),
       );
     }
   };
@@ -151,6 +156,12 @@ export default function LoginModal({ open, onClose, onSwitchToSignup }: Props) {
               비밀번호 찾기
             </button>
           </div>
+
+          {loginError && (
+            <p className="mb-3 text-[13px] text-red-500 text-center">
+              {loginError}
+            </p>
+          )}
 
           <button
             type="submit"
