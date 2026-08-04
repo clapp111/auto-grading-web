@@ -111,7 +111,7 @@ export const problemsApi = {
   ) =>
     apiClient
       .post<ApiResponse<PresignedUrlResponse>>(
-        `/exams/${examId}/model-answer`,
+        `/exams/${examId}/model-answers`,
         {
           file_name: fileName,
           content_type: contentType,
@@ -127,7 +127,7 @@ export const problemsApi = {
   runModelAnswerOcr: (problemId: number, body: ModelAnswerOcrRequest) =>
     apiClient
       .post<ApiResponse<JobStartedResponse>>(
-        `/problems/${problemId}/model-answer/ocr`,
+        `/problems/${problemId}/model-answers/ocr`,
         body,
       )
       .then((r) => r.data),
@@ -135,7 +135,7 @@ export const problemsApi = {
   updateModelAnswer: (problemId: number, body: ModelAnswerUpdateRequest) =>
     apiClient
       .put<ApiResponse<ModelAnswerResponse>>(
-        `/problems/${problemId}/model-answer`,
+        `/problems/${problemId}/model-answers`,
         body,
       )
       .then((r) => r.data),
@@ -145,24 +145,27 @@ export const problemsApi = {
   suggestRubric: (problemId: number) =>
     apiClient
       .post<ApiResponse<JobStartedResponse>>(
-        `/problems/${problemId}/rubric/suggest`,
+        `/problems/${problemId}/rubrics/suggest`,
       )
       .then((r) => r.data),
 
   getRubric: (problemId: number) =>
     apiClient
-      .get<ApiResponse<RubricResponse[]>>(`/problems/${problemId}/rubric`)
+      .get<ApiResponse<RubricResponse[]>>(`/problems/${problemId}/rubrics`)
       .then((r) => r.data),
 
   saveRubric: (problemId: number, body: RubricSaveRequest) =>
     apiClient
-      .put<ApiResponse<RubricResponse[]>>(`/problems/${problemId}/rubric`, body)
+      .put<ApiResponse<RubricResponse[]>>(
+        `/problems/${problemId}/rubrics`,
+        body,
+      )
       .then((r) => r.data),
 
   createRubricCriteria: (problemId: number, body: RubricCreateRequest) =>
     apiClient
       .post<ApiResponse<RubricResponse>>(
-        `/problems/${problemId}/rubric/criteria`,
+        `/problems/${problemId}/rubrics/criteria`,
         body,
       )
       .then((r) => r.data),

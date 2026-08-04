@@ -27,14 +27,14 @@ export const gradingApi = {
   getProgress: (examId: number) =>
     apiClient
       .get<ApiResponse<GradingProgressResponse>>(
-        `/exams/${examId}/grading/progress`,
+        `/exams/${examId}/grades/progress`,
       )
       .then((r) => r.data),
 
   runForProblem: (examId: number, problemId: number) =>
     apiClient
       .post<ApiResponse<JobStartedResponse>>(
-        `/exams/${examId}/problems/${problemId}/grade/run`,
+        `/exams/${examId}/problems/${problemId}/grades/run`,
       )
       .then((r) => r.data),
 
